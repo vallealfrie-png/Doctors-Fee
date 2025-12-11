@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <!-- NAVBAR -->
+  <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Clinic Dashboard</h1>
+
+    <div class="space-x-6 font-semibold">
+      <a href="#" onclick="showPage('patients')" class="hover:text-blue-600">Patients</a>
+      <a href="#" onclick="showPage('reports')" class="hover:text-blue-600">Reports</a>
+      <button onclick="logout()" class="bg-red-500 text-white px-4 py-1 rounded-lg hover:bg-red-600">
+        Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT WRAPPER -->
+  <div class="p-6">
+
+    <!-- PATIENTS PAGE -->
+    <div id="patients" class="page">
+      <h2 class="text-2xl font-bold mb-4">Patient Records</h2>
+
+      <div id="patient-list" class="bg-white p-4 rounded-lg shadow">
+        <p class="text-gray-600">Patient list will load here…</p>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="reports" class="page hidden">
+      <h2 class="text-2xl font-bold mb-4">Reports</h2>
+
+      <div class="bg-white p-4 rounded-lg shadow">
+        <p class="text-gray-600">Charts & analytics will appear here…</p>
+      </div>
+    </div>
+
+  </div>
+
+  
+  <!-- SCRIPT -->
+  <script>
+    const supabaseUrl = "https://qmjjfrpwjewcrnavdsks.supabase.co";
+    const supabaseKey = "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // CHECK LOGIN SESSION
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        window.location.href = "index.html"; // Redirect to login
+      }
+    });
+
+    // LOGOUT FUNCTION
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
+    }
+
+    // PAGE SWITCHING
+    function showPage(page) {
+      document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+      document.getElementById(page).classList.remove("hidden");
+    }
+
+    // LOAD PATIENT LIST (placeholder until Supabase table is ready)
+    async function loadPatients() {
+      const container = document.getElementById("patient-list");
+
+      container.innerHTML = "<p class='text-gray-500'>Loading...</p>";
+
+      // If you have a patients table later, plug here:
+      // const { data, error } = await supabase.from("patients").select("*");
+
+      setTimeout(() => {
+        container.innerHTML = `
+          <p class="text-gray-600">Patient list connected! Ready when your table is ready.</p>
+        `;
+      }, 800);
+    }
+
+    loadPatients();
+  </script>
+
+</body>
+</html>
