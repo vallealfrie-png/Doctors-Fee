@@ -6,8 +6,8 @@
   <title>Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Load Supabase (ONLY ONCE) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Load Supabase (NO DEFER!) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -17,15 +17,18 @@
     <form id="login-form" class="space-y-4">
       <div>
         <label class="block mb-1 font-semibold">Email</label>
-        <input id="email" type="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none" required />
+        <input id="email" type="email" class="w-full px-4 py-2 border rounded-lg"
+          required />
       </div>
 
       <div>
         <label class="block mb-1 font-semibold">Password</label>
-        <input id="password" type="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none" required />
+        <input id="password" type="password" class="w-full px-4 py-2 border rounded-lg"
+          required />
       </div>
 
-      <button type="submit" class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+      <button type="submit"
+        class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
         Login
       </button>
     </form>
@@ -34,46 +37,44 @@
   </div>
 
   <script>
-       document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
 
-  const supa = supabase.createClient(
-    "https://qmjjfrpwjewcrnavdsks.supabase.co",
-    "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
-  );
+      // USE THE SAME NAME "supabase"
+      const supabase = window.supabase.createClient(
+        "https://qmjjfrpwjewcrnavdsks.supabase.co",
+        "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
+      );
 
-  const form = document.getElementById("login-form");
-  const errorBox = document.getElementById("error");
+      const form = document.getElementById("login-form");
+      const errorBox = document.getElementById("error");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorBox.classList.add("hidden");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorBox.classList.add("hidden");
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-    const { data, error } = await supa.auth.signInWithPassword({
-      email,
-      password
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          errorBox.textContent = error.message;
+          errorBox.classList.remove("hidden");
+          return;
+        }
+
+        window.location.href = "dashboard.html";
+      });
+
+      // auto redirect if logged in
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) window.location.href = "dashboard.html";
+      });
+
     });
-
-    if (error) {
-      errorBox.textContent = error.message;
-      errorBox.classList.remove("hidden");
-    } else {
-      window.location.href = "dashboard.html";
-    }
-  });
-
-  supa.auth.getSession().then(({ data }) => {
-    if (data.session) {
-      window.location.href = "dashboard.html";
-    }
-  });
-
-});
-</script>
+  </script>
 </body>
 </html>
-
-
-
