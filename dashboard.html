@@ -1,96 +1,375 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clinic Dashboard</title>
 
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS (only once) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
 
-<body class="bg-gray-100">
+  <style>
+    /* small fix so modal's scrollbar doesn't shift */
+    body.modal-open { overflow: hidden; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
 
   <!-- NAVBAR -->
   <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
-    <h1 class="text-xl font-bold">Clinic Dashboard</h1>
+    <div class="flex items-center space-x-4">
+      <h1 class="text-lg font-bold">Doctor's Fee Portal</h1>
+      <span id="badge-role" class="px-2 py-1 rounded text-sm bg-gray-100 text-gray-600 hidden"></span>
+    </div>
 
-    <div class="space-x-6 font-semibold">
-      <a href="#" onclick="showPage('patients')" class="hover:text-blue-600">Patients</a>
-      <a href="#" onclick="showPage('reports')" class="hover:text-blue-600">Reports</a>
-      <button onclick="logout()" class="bg-red-500 text-white px-4 py-1 rounded-lg hover:bg-red-600">
-        Logout
-      </button>
+    <div class="flex items-center space-x-4">
+      <button onclick="showPage('patients')" class="text-sm hover:text-blue-600">Patients</button>
+      <button onclick="showPage('reports')" class="text-sm hover:text-blue-600">Reports</button>
+      <button id="logoutBtn" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Logout</button>
     </div>
   </nav>
 
-  <!-- MAIN CONTENT WRAPPER -->
-  <div class="p-6">
+  <!-- MAIN -->
+  <main class="p-6 max-w-6xl mx-auto">
 
-    <!-- PATIENTS PAGE -->
-    <div id="patients" class="page">
-      <h2 class="text-2xl font-bold mb-4">Patient Records</h2>
+    <!-- PATIENTS SECTION -->
+    <section id="patients" class="page">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-2xl font-semibold">Patient Records</h2>
+          <p class="text-sm text-gray-600 mt-1">Search and add patients (staff only).</p>
+        </div>
 
-      <div id="patient-list" class="bg-white p-4 rounded-lg shadow">
-        <p class="text-gray-600">Patient list will load here…</p>
+        <div class="flex items-center gap-3">
+          <input id="searchInput" type="search" placeholder="Search name, contact, email..."
+                 class="px-3 py-2 border rounded w-80" />
+          <button id="searchBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Search</button>
+          <button id="clearSearch" class="px-3 py-2 border rounded">Clear</button>
+
+          <button id="addPatientBtn" class="px-3 py-2 bg-green-600 text-white rounded hidden">
+            Add Patient
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- REPORTS PAGE -->
-    <div id="reports" class="page hidden">
-      <h2 class="text-2xl font-bold mb-4">Reports</h2>
+      <div id="patient-list" class="bg-white p-4 rounded shadow">
+        <div id="patientsLoading" class="text-gray-500">Loading patients...</div>
 
-      <div class="bg-white p-4 rounded-lg shadow">
-        <p class="text-gray-600">Charts & analytics will appear here…</p>
+        <div id="patientsError" class="text-red-600 hidden"></div>
+        <div id="patientsEmpty" class="text-gray-500 hidden">No patients found.</div>
+
+        <div class="overflow-x-auto mt-4">
+          <table id="patientsTable" class="min-w-full divide-y divide-gray-200 hidden">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Gender</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Age</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Contact</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Email</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Address</th>
+                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Added</th>
+              </tr>
+            </thead>
+            <tbody id="patientsTbody" class="bg-white divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
 
+    <!-- REPORTS SECTION (placeholder) -->
+    <section id="reports" class="page hidden">
+      <h2 class="text-2xl font-semibold mb-2">Reports</h2>
+      <div class="bg-white p-4 rounded shadow text-gray-600">
+        Reports and charts will be added here.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ADD PATIENT MODAL -->
+  <div id="addPatientModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white w-full max-w-xl rounded-lg p-6 shadow-lg mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">Add Patient</h3>
+        <button id="closeAddModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+      </div>
+
+      <form id="addPatientForm" class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium">Full name</label>
+          <input id="p_full_name" required class="w-full border px-3 py-2 rounded" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium">Gender</label>
+            <select id="p_gender" class="w-full border px-2 py-2 rounded">
+              <option value="">Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Age</label>
+            <input id="p_age" type="number" min="0" class="w-full border px-3 py-2 rounded" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Contact</label>
+            <input id="p_contact_no" class="w-full border px-3 py-2 rounded" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Email</label>
+          <input id="p_email" type="email" class="w-full border px-3 py-2 rounded" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Address</label>
+          <textarea id="p_address" rows="2" class="w-full border px-3 py-2 rounded"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" id="cancelAdd" class="px-4 py-2 border rounded">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
+        </div>
+
+        <div id="addPatientMsg" class="text-sm mt-2 hidden"></div>
+      </form>
+    </div>
   </div>
 
-  
   <!-- SCRIPT -->
   <script>
-    const supabaseUrl = "https://qmjjfrpwjewcrnavdsks.supabase.co";
-    const supabaseKey = "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // ---------- CONFIG: set your project URL & publishable key ----------
+    const SUPABASE_URL = "https://qmjjfrpwjewcrnavdsks.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF";
 
-    // CHECK LOGIN SESSION
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        window.location.href = "index.html"; // Redirect to login
+    // Single Supabase client instance for the page
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Simple helper to escape text for HTML injection
+    function escapeHtml(s) {
+      if (!s && s !== 0) return "";
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    // ---------- AUTH GUARD: ensure user is logged in ----------
+    (async function authGuard() {
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session ?? null;
+      if (!session) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      // show user role badge and set up page after we get role
+      const userId = session.user.id;
+      try {
+        const { data: profile, error } = await supabase
+          .from("app_users")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) throw error;
+        const role = profile?.role ?? "staff";
+        document.getElementById("badge-role").textContent = role.toUpperCase();
+        document.getElementById("badge-role").classList.remove("hidden");
+
+        // Show add button only for staff role
+        if (role === "staff") document.getElementById("addPatientBtn").classList.remove("hidden");
+
+        // attach logout
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+          await supabase.auth.signOut();
+          window.location.href = "index.html";
+        });
+
+        // initialize patient UI
+        initPatientsPage();
+      } catch (err) {
+        console.error("Failed to get profile or init:", err);
+        // redirect to login for safety
+        window.location.href = "index.html";
+      }
+    })();
+
+    // ---------- Page UI functions ----------
+    function showPage(pageId) {
+      document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+      const el = document.getElementById(pageId);
+      if (el) el.classList.remove("hidden");
+      // on page show: load patients if page is patients
+      if (pageId === "patients") loadPatients();
+    }
+
+    // ---------- Patients state & helpers ----------
+    const patientsState = { data: [], filtered: [], loading: false };
+
+    async function loadPatients() {
+      patientsState.loading = true;
+      document.getElementById("patientsLoading").classList.remove("hidden");
+      document.getElementById("patientsTable").classList.add("hidden");
+      document.getElementById("patientsEmpty").classList.add("hidden");
+      document.getElementById("patientsError").classList.add("hidden");
+
+      try {
+        // RLS will control which rows are visible to the logged-in user
+        const { data, error } = await supabase
+          .from("patients")
+          .select("id, full_name, gender, age, address, contact_no, email, created_at")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+
+        if (error) throw error;
+        patientsState.data = data || [];
+        patientsState.filtered = [...patientsState.data];
+        renderPatients();
+      } catch (err) {
+        document.getElementById("patientsError").textContent = "Failed to load patients: " + (err.message || err);
+        document.getElementById("patientsError").classList.remove("hidden");
+        console.error(err);
+      } finally {
+        patientsState.loading = false;
+        document.getElementById("patientsLoading").classList.add("hidden");
+      }
+    }
+
+    function renderPatients() {
+      const tbody = document.getElementById("patientsTbody");
+      tbody.innerHTML = "";
+
+      if (!patientsState.filtered.length) {
+        document.getElementById("patientsTable").classList.add("hidden");
+        document.getElementById("patientsEmpty").classList.remove("hidden");
+        return;
+      }
+
+      document.getElementById("patientsTable").classList.remove("hidden");
+      document.getElementById("patientsEmpty").classList.add("hidden");
+
+      for (const p of patientsState.filtered) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-sm">${escapeHtml(p.full_name)}</td>
+          <td class="px-4 py-3 text-sm">${escapeHtml(p.gender)}</td>
+          <td class="px-4 py-3 text-sm">${p.age ?? ""}</td>
+          <td class="px-4 py-3 text-sm">${escapeHtml(p.contact_no)}</td>
+          <td class="px-4 py-3 text-sm">${escapeHtml(p.email)}</td>
+          <td class="px-4 py-3 text-sm">${escapeHtml(p.address)}</td>
+          <td class="px-4 py-3 text-sm">${p.created_at ? new Date(p.created_at).toLocaleString() : ""}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ---------- Search handlers ----------
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      const q = document.getElementById("searchInput").value.trim().toLowerCase();
+      if (!q) {
+        patientsState.filtered = [...patientsState.data];
+      } else {
+        patientsState.filtered = patientsState.data.filter(p =>
+          (p.full_name || "").toLowerCase().includes(q) ||
+          (p.contact_no || "").toLowerCase().includes(q) ||
+          (p.email || "").toLowerCase().includes(q)
+        );
+      }
+      renderPatients();
+    });
+
+    document.getElementById("clearSearch").addEventListener("click", () => {
+      document.getElementById("searchInput").value = "";
+      patientsState.filtered = [...patientsState.data];
+      renderPatients();
+    });
+
+    document.getElementById("searchInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("searchBtn").click();
       }
     });
 
-    // LOGOUT FUNCTION
-    async function logout() {
-      await supabase.auth.signOut();
-      window.location.href = "index.html";
+    // ---------- Add Patient modal logic ----------
+    const addPatientBtn = document.getElementById("addPatientBtn");
+    const addPatientModal = document.getElementById("addPatientModal");
+    const closeAddModal = document.getElementById("closeAddModal");
+    const cancelAdd = document.getElementById("cancelAdd");
+    const addPatientForm = document.getElementById("addPatientForm");
+    const addPatientMsg = document.getElementById("addPatientMsg");
+
+    function openModal() {
+      addPatientModal.classList.remove("hidden");
+      document.body.classList.add("modal-open");
+    }
+    function closeModal() {
+      addPatientModal.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+      addPatientForm.reset();
+      addPatientMsg.classList.add("hidden");
     }
 
-    // PAGE SWITCHING
-    function showPage(page) {
-      document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-      document.getElementById(page).classList.remove("hidden");
+    addPatientBtn.addEventListener("click", openModal);
+    closeAddModal.addEventListener("click", closeModal);
+    cancelAdd.addEventListener("click", closeModal);
+
+    addPatientForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      addPatientMsg.classList.add("hidden");
+
+      const payload = {
+        full_name: document.getElementById("p_full_name").value.trim(),
+        gender: document.getElementById("p_gender").value,
+        age: document.getElementById("p_age").value ? parseInt(document.getElementById("p_age").value) : null,
+        contact_no: document.getElementById("p_contact_no").value.trim(),
+        email: document.getElementById("p_email").value.trim(),
+        address: document.getElementById("p_address").value.trim(),
+      };
+
+      if (!payload.full_name) {
+        showAddMsg("Full name is required.", false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.from("patients").insert([payload]);
+        if (error) throw error;
+        showAddMsg("Patient saved successfully.", true);
+        // refresh
+        await loadPatients();
+        setTimeout(() => closeModal(), 600);
+      } catch (err) {
+        console.error("Insert error:", err);
+        showAddMsg("Failed to save patient: " + (err.message || err), false);
+      }
+    });
+
+    function showAddMsg(msg, ok = true) {
+      addPatientMsg.textContent = msg;
+      addPatientMsg.classList.remove("hidden");
+      addPatientMsg.classList.toggle("text-green-600", ok);
+      addPatientMsg.classList.toggle("text-red-600", !ok);
     }
 
-    // LOAD PATIENT LIST (placeholder until Supabase table is ready)
-    async function loadPatients() {
-      const container = document.getElementById("patient-list");
-
-      container.innerHTML = "<p class='text-gray-500'>Loading...</p>";
-
-      // If you have a patients table later, plug here:
-      // const { data, error } = await supabase.from("patients").select("*");
-
-      setTimeout(() => {
-        container.innerHTML = `
-          <p class="text-gray-600">Patient list connected! Ready when your table is ready.</p>
-        `;
-      }, 800);
+    // ---------- Init function for patients page ----------------
+    async function initPatientsPage() {
+      // initially load patients
+      await loadPatients();
     }
 
-    loadPatients();
+    // show patients page by default
+    showPage("patients");
   </script>
-
 </body>
 </html>
