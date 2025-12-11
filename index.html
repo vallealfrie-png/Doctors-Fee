@@ -34,45 +34,42 @@
   </div>
 
   <script>
-    // ✅ Correct Supabase Client
-    const supabase = supabase.createClient(
-      "https://qmjjfrpwjewcrnavdsks.supabase.co",
-      "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
-    );
+  const supabase = supabase.createClient(
+    "https://qmjjfrpwjewcrnavdsks.supabase.co",
+    "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
+  );
 
-    const form = document.getElementById("login-form");
-    const errorBox = document.getElementById("error");
+  const form = document.getElementById("login-form");
+  const errorBox = document.getElementById("error");
 
-    // ✅ Login Handler
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorBox.classList.add("hidden");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.add("hidden");
 
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        errorBox.textContent = error.message;
-        errorBox.classList.remove("hidden");
-      } else {
-        // Redirect to dashboard
-        window.location.href = "dashboard.html";
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
 
-    // ✅ Auto-redirect if already logged in
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        window.location.href = "dashboard.html";
-      }
-    });
-  </script>
+    if (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove("hidden");
+    } else {
+      window.location.href = "dashboard.html";
+    }
+  });
 
+  // Auto redirect if logged in
+  supabase.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      window.location.href = "dashboard.html";
+    }
+  });
+</script>
 </body>
 </html>
+
 
