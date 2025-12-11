@@ -7,14 +7,15 @@
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS (only once) -->
+
+  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* small fix so modal's scrollbar doesn't shift */
     body.modal-open { overflow: hidden; }
   </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen text-gray-800">
 
   <!-- NAVBAR -->
@@ -34,7 +35,7 @@
   <!-- MAIN -->
   <main class="p-6 max-w-6xl mx-auto">
 
-    <!-- PATIENTS SECTION -->
+    <!-- PATIENTS PAGE -->
     <section id="patients" class="page">
       <div class="flex justify-between items-center mb-6">
         <div>
@@ -56,7 +57,6 @@
 
       <div id="patient-list" class="bg-white p-4 rounded shadow">
         <div id="patientsLoading" class="text-gray-500">Loading patients...</div>
-
         <div id="patientsError" class="text-red-600 hidden"></div>
         <div id="patientsEmpty" class="text-gray-500 hidden">No patients found.</div>
 
@@ -79,7 +79,7 @@
       </div>
     </section>
 
-    <!-- REPORTS SECTION (placeholder) -->
+    <!-- REPORTS PAGE -->
     <section id="reports" class="page hidden">
       <h2 class="text-2xl font-semibold mb-2">Reports</h2>
       <div class="bg-white p-4 rounded shadow text-gray-600">
@@ -98,6 +98,7 @@
       </div>
 
       <form id="addPatientForm" class="space-y-3">
+
         <div>
           <label class="block text-sm font-medium">Full name</label>
           <input id="p_full_name" required class="w-full border px-3 py-2 rounded" />
@@ -113,10 +114,12 @@
               <option>Other</option>
             </select>
           </div>
+
           <div>
             <label class="block text-sm font-medium">Age</label>
             <input id="p_age" type="number" min="0" class="w-full border px-3 py-2 rounded" />
           </div>
+
           <div>
             <label class="block text-sm font-medium">Contact</label>
             <input id="p_contact_no" class="w-full border px-3 py-2 rounded" />
@@ -145,14 +148,14 @@
 
   <!-- SCRIPT -->
   <script>
-    // ---------- CONFIG: set your project URL & publishable key ----------
+    // ---------- CONFIG ----------
     const SUPABASE_URL = "https://qmjjfrpwjewcrnavdsks.supabase.co";
     const SUPABASE_KEY = "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF";
 
-    // Single Supabase client instance for the page
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // FIX: correct initialization
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Simple helper to escape text for HTML injection
+    // Escape unsafe HTML
     function escapeHtml(s) {
       if (!s && s !== 0) return "";
       return String(s)
@@ -163,84 +166,75 @@
         .replaceAll("'", "&#39;");
     }
 
-    // ---------- AUTH GUARD: ensure user is logged in ----------
+    // ---------- AUTH GUARD ----------
     (async function authGuard() {
       const { data } = await supabase.auth.getSession();
-      const session = data?.session ?? null;
+      const session = data?.session;
+
       if (!session) {
         window.location.href = "index.html";
         return;
       }
 
-      // show user role badge and set up page after we get role
       const userId = session.user.id;
-      try {
-        const { data: profile, error } = await supabase
-          .from("app_users")
-          .select("role")
-          .eq("id", userId)
-          .single();
 
-        if (error) throw error;
-        const role = profile?.role ?? "staff";
-        document.getElementById("badge-role").textContent = role.toUpperCase();
-        document.getElementById("badge-role").classList.remove("hidden");
+      // fetch role
+      const { data: profile, error } = await supabase
+        .from("app_users")
+        .select("role")
+        .eq("id", userId)
+        .single();
 
-        // Show add button only for staff role
-        if (role === "staff") document.getElementById("addPatientBtn").classList.remove("hidden");
+      const role = profile?.role || "staff";
 
-        // attach logout
-        document.getElementById("logoutBtn").addEventListener("click", async () => {
-          await supabase.auth.signOut();
-          window.location.href = "index.html";
-        });
+      document.getElementById("badge-role").textContent = role.toUpperCase();
+      document.getElementById("badge-role").classList.remove("hidden");
 
-        // initialize patient UI
-        initPatientsPage();
-      } catch (err) {
-        console.error("Failed to get profile or init:", err);
-        // redirect to login for safety
-        window.location.href = "index.html";
+      if (role === "staff") {
+        document.getElementById("addPatientBtn").classList.remove("hidden");
       }
+
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+      });
+
+      initPatientsPage();
     })();
 
-    // ---------- Page UI functions ----------
+    // ---------- PAGE SWITCHING ----------
     function showPage(pageId) {
       document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-      const el = document.getElementById(pageId);
-      if (el) el.classList.remove("hidden");
-      // on page show: load patients if page is patients
+      document.getElementById(pageId).classList.remove("hidden");
+
       if (pageId === "patients") loadPatients();
     }
 
-    // ---------- Patients state & helpers ----------
-    const patientsState = { data: [], filtered: [], loading: false };
+    // ---------- PATIENTS ----------
+    const patientsState = { data: [], filtered: [] };
 
     async function loadPatients() {
-      patientsState.loading = true;
       document.getElementById("patientsLoading").classList.remove("hidden");
       document.getElementById("patientsTable").classList.add("hidden");
       document.getElementById("patientsEmpty").classList.add("hidden");
-      document.getElementById("patientsError").classList.add("hidden");
 
       try {
-        // RLS will control which rows are visible to the logged-in user
         const { data, error } = await supabase
           .from("patients")
           .select("id, full_name, gender, age, address, contact_no, email, created_at")
-          .order("created_at", { ascending: false })
-          .limit(1000);
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
-        patientsState.data = data || [];
-        patientsState.filtered = [...patientsState.data];
+
+        patientsState.data = data;
+        patientsState.filtered = [...data];
+
         renderPatients();
       } catch (err) {
-        document.getElementById("patientsError").textContent = "Failed to load patients: " + (err.message || err);
+        document.getElementById("patientsError").textContent =
+          "Failed to load patients: " + err.message;
         document.getElementById("patientsError").classList.remove("hidden");
-        console.error(err);
       } finally {
-        patientsState.loading = false;
         document.getElementById("patientsLoading").classList.add("hidden");
       }
     }
@@ -256,7 +250,6 @@
       }
 
       document.getElementById("patientsTable").classList.remove("hidden");
-      document.getElementById("patientsEmpty").classList.add("hidden");
 
       for (const p of patientsState.filtered) {
         const tr = document.createElement("tr");
@@ -267,15 +260,16 @@
           <td class="px-4 py-3 text-sm">${escapeHtml(p.contact_no)}</td>
           <td class="px-4 py-3 text-sm">${escapeHtml(p.email)}</td>
           <td class="px-4 py-3 text-sm">${escapeHtml(p.address)}</td>
-          <td class="px-4 py-3 text-sm">${p.created_at ? new Date(p.created_at).toLocaleString() : ""}</td>
+          <td class="px-4 py-3 text-sm">${new Date(p.created_at).toLocaleString()}</td>
         `;
         tbody.appendChild(tr);
       }
     }
 
-    // ---------- Search handlers ----------
+    // ---------- SEARCH ----------
     document.getElementById("searchBtn").addEventListener("click", () => {
       const q = document.getElementById("searchInput").value.trim().toLowerCase();
+
       if (!q) {
         patientsState.filtered = [...patientsState.data];
       } else {
@@ -301,18 +295,18 @@
       }
     });
 
-    // ---------- Add Patient modal logic ----------
+    // ---------- ADD PATIENT ----------
     const addPatientBtn = document.getElementById("addPatientBtn");
     const addPatientModal = document.getElementById("addPatientModal");
-    const closeAddModal = document.getElementById("closeAddModal");
-    const cancelAdd = document.getElementById("cancelAdd");
-    const addPatientForm = document.getElementById("addPatientForm");
-    const addPatientMsg = document.getElementById("addPatientMsg");
 
-    function openModal() {
+    addPatientBtn.addEventListener("click", () => {
       addPatientModal.classList.remove("hidden");
       document.body.classList.add("modal-open");
-    }
+    });
+
+    document.getElementById("closeAddModal").addEventListener("click", closeModal);
+    document.getElementById("cancelAdd").addEventListener("click", closeModal);
+
     function closeModal() {
       addPatientModal.classList.add("hidden");
       document.body.classList.remove("modal-open");
@@ -320,57 +314,54 @@
       addPatientMsg.classList.add("hidden");
     }
 
-    addPatientBtn.addEventListener("click", openModal);
-    closeAddModal.addEventListener("click", closeModal);
-    cancelAdd.addEventListener("click", closeModal);
+    const addPatientForm = document.getElementById("addPatientForm");
+    const addPatientMsg = document.getElementById("addPatientMsg");
 
     addPatientForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       addPatientMsg.classList.add("hidden");
 
       const payload = {
-        full_name: document.getElementById("p_full_name").value.trim(),
-        gender: document.getElementById("p_gender").value,
-        age: document.getElementById("p_age").value ? parseInt(document.getElementById("p_age").value) : null,
-        contact_no: document.getElementById("p_contact_no").value.trim(),
-        email: document.getElementById("p_email").value.trim(),
-        address: document.getElementById("p_address").value.trim(),
+        full_name: p_full_name.value.trim(),
+        gender: p_gender.value,
+        age: p_age.value ? parseInt(p_age.value) : null,
+        contact_no: p_contact_no.value.trim(),
+        email: p_email.value.trim(),
+        address: p_address.value.trim()
       };
 
       if (!payload.full_name) {
-        showAddMsg("Full name is required.", false);
-        return;
+        return showAddMsg("Full name is required.", false);
       }
 
       try {
-        const { data, error } = await supabase.from("patients").insert([payload]);
+        const { error } = await supabase.from("patients").insert(payload);
         if (error) throw error;
+
         showAddMsg("Patient saved successfully.", true);
-        // refresh
+
         await loadPatients();
-        setTimeout(() => closeModal(), 600);
+        setTimeout(closeModal, 600);
+
       } catch (err) {
-        console.error("Insert error:", err);
-        showAddMsg("Failed to save patient: " + (err.message || err), false);
+        showAddMsg("Failed to save patient: " + err.message, false);
       }
     });
 
-    function showAddMsg(msg, ok = true) {
+    function showAddMsg(msg, ok) {
       addPatientMsg.textContent = msg;
       addPatientMsg.classList.remove("hidden");
       addPatientMsg.classList.toggle("text-green-600", ok);
       addPatientMsg.classList.toggle("text-red-600", !ok);
     }
 
-    // ---------- Init function for patients page ----------------
+    // ---------- INIT ----------
     async function initPatientsPage() {
-      // initially load patients
-      await loadPatients();
+      loadPatients();
     }
 
-    // show patients page by default
+    // Show patients on load
     showPage("patients");
   </script>
 </body>
 </html>
-
