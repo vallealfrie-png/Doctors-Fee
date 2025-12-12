@@ -1,169 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Clinic Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
 
-<!-- NAVBAR -->
-<nav class="bg-blue-600 text-white p-4 flex justify-between">
-    <h1 class="font-bold text-xl">Clinic Dashboard</h1>
-    <div class="space-x-4">
-        <a href="dashboard.html" class="hover:underline">Patients</a>
-        <a href="reports.html" class="hover:underline">Reports</a>
-    </div>
+<!-- NAVBAR (Logout restored) -->
+<nav class="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow-lg">
+  <h1 class="text-xl font-bold">Clinic Dashboard</h1>
+  <div class="space-x-4 flex items-center">
+    <a href="dashboard.html" class="hover:underline">Patients</a>
+    <a href="reports.html" class="hover:underline">Reports</a>
+
+    <!-- LOGOUT RESTORED -->
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
+      Logout
+    </button>
+  </div>
 </nav>
 
-<!-- CONTAINER -->
-<div class="max-w-4xl mx-auto mt-8 bg-white p-6 shadow rounded">
+<div class="p-6 max-w-6xl mx-auto">
 
-    <h2 class="text-2xl font-bold mb-4">Add New Patient</h2>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold">Patient List</h2>
+    <button id="openAddModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Patient</button>
+  </div>
 
-    <form id="patientForm" class="space-y-4">
+  <!-- SEARCH BAR -->
+  <div class="mb-4 flex gap-2">
+    <input id="searchInput" type="text" placeholder="Search patient name..." class="px-3 py-2 border rounded w-64">
+    <button id="searchBtn" class="bg-blue-600 text-white px-3 py-2 rounded">Search</button>
+    <button id="clearBtn" class="bg-gray-400 text-white px-3 py-2 rounded">Clear</button>
+  </div>
 
-        <div>
-            <label class="block font-semibold">Full Name</label>
-            <input id="full_name" class="w-full p-2 border rounded" />
-        </div>
-
-        <div>
-            <label class="block font-semibold">Age</label>
-            <input id="age" type="number" class="w-full p-2 border rounded" />
-        </div>
-
-        <div>
-            <label class="block font-semibold">Gender</label>
-            <select id="gender" class="w-full p-2 border rounded">
-                <option value="">Select gender</option>
-                <option>Male</option>
-                <option>Female</option>
-            </select>
-        </div>
-
-        <div>
-            <label class="block font-semibold">Address</label>
-            <input id="address" class="w-full p-2 border rounded" />
-        </div>
-
-        <div>
-            <label class="block font-semibold">Contact Number</label>
-            <input id="contact_no" class="w-full p-2 border rounded" />
-        </div>
-
-        <!-- DOCTOR DROPDOWN -->
-        <div>
-            <label class="block font-semibold">Doctor</label>
-            <select id="doctor_id" class="w-full p-2 border rounded">
-                <option value="">Select doctor</option>
-            </select>
-            <p id="doctorError" class="text-red-600 text-sm hidden">Please select a doctor</p>
-        </div>
-
-        <div>
-            <label class="block font-semibold">Doctor’s Fee</label>
-            <input id="doctor_fee" type="number" class="w-full p-2 border rounded" />
-        </div>
-
-        <button id="saveBtn" type="button" 
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Save
-        </button>
-    </form>
-
-    <p id="statusMessage" class="mt-4 font-semibold"></p>
-
+  <!-- PATIENT TABLE -->
+  <table class="w-full bg-white shadow rounded overflow-hidden">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="py-2 px-3 text-left">Name</th>
+        <th class="py-2 px-3 text-center">Gender</th>
+        <th class="py-2 px-3 text-center">Age</th>
+        <th class="py-2 px-3 text-center">Contact</th>
+      </tr>
+    </thead>
+    <tbody id="patientTable"></tbody>
+  </table>
 </div>
 
-<script>
-    // -----------------------------
-    // Supabase Initialization
-    // -----------------------------
-    const supabase = supabase.createClient(
-        "YOUR_SUPABASE_URL",
-        "YOUR_SUPABASE_ANON_KEY"
-    );
+<!-- ADD PATIENT MODAL -->
+<div id="addModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-4">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl max-h-screen overflow-y-auto">
+    <h2 class="text-xl font-bold mb-4">Add Patient</h2>
 
-    // -----------------------------
-    // Load doctors into dropdown
-    // -----------------------------
-    async function loadDoctors() {
-        const { data, error } = await supabase
-            .from("doctors")
-            .select("*")
-            .order("name");
+    <form id="addPatientForm" class="space-y-3">
 
-        if (error) {
-            console.error("Error loading doctors:", error);
-            return;
-        }
+      <div>
+        <label class="font-semibold">Full Name</label>
+        <input id="full_name" class="w-full border p-2 rounded" required />
+      </div>
 
-        const dropdown = document.getElementById("doctor_id");
-        dropdown.innerHTML = `<option value="">Select doctor</option>`;
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="font-semibold">Gender</label>
+          <select id="gender" class="w-full border p-2 rounded">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
 
-        data.forEach(doc => {
-            const opt = document.createElement("option");
-            opt.value = doc.id;
-            opt.textContent = doc.name;
-            dropdown.appendChild(opt);
-        });
-    }
+        <div>
+          <label class="font-semibold">Age</label>
+          <input id="age" type="number" class="w-full border p-2 rounded" />
+        </div>
+      </div>
 
-    loadDoctors();
+      <div>
+        <label class="font-semibold">Address</label>
+        <input id="address" class="w-full border p-2 rounded" />
+      </div>
+
+      <div>
+        <label class="font-semibold">Contact Number</label>
+        <input id="contact_no" class="w-full border p-2 rounded" />
+      </div>
+
+      <!-- DOCTOR -->
+      <div>
+        <label class="font-semibold">Doctor</label>
+        <select id="doctor_id" class="w-full border p-2 rounded">
+          <option value="">Select doctor</option>
+        </select>
+        <span id="doctor_error" class="text-red-600 text-sm hidden">Please select a doctor</span>
+      </div>
+
+      <div>
+        <label class="font-semibold">Doctor Fee</label>
+        <input id="doctor_fee" type="number" class="w-full border p-2 rounded" />
+      </div>
+
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" id="closeAddModal" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
+        <button id="saveBtn" type="button" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
+      </div>
+    </form>
+
+    <p id="saveStatus" class="mt-3 font-bold"></p>
+  </div>
+</div>
+
+  <script>
+/* ---------------------------
+   SUPABASE INIT  (FIXED)
+---------------------------- */
+const supabaseClient = supabase.createClient(
+  "https://qmjjfrpwjewcrnavdsks.supabase.co",
+  "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
+);
+
+/* ---------------------------
+   LOGOUT
+---------------------------- */
+document.getElementById("logoutBtn").onclick = async () => {
+  await supabaseClient.auth.signOut();
+  window.location.href = "index.html";
+};
+
+/* ---------------------------
+   LOAD DOCTORS FROM doctors_fees
+---------------------------- */
+async function loadDoctors() {
+  const { data, error } = await supabaseClient
+    .from("doctors_fees")
+    .select("*");
+
+  if (error) {
+    console.error("Doctor load error:", error);
+    return;
+  }
+
+  const doctorSelect = document.getElementById("doctor_id");
+  doctorSelect.innerHTML = `<option value="">Select doctor</option>`;
+
+  data.forEach(doc => {
+    const opt = document.createElement("option");
+    opt.value = doc.id;
+    opt.textContent = doc.doctor_name;
+    opt.setAttribute("data-fee", doc.fee_amount);
+    doctorSelect.appendChild(opt);
+  });
+}
+
+/* Auto-fill fee when doctor changes */
+document.getElementById("doctor_id").addEventListener("change", (e) => {
+  const fee = e.target.selectedOptions[0].getAttribute("data-fee");
+  document.getElementById("doctor_fee").value = fee || "";
+});
+
+loadDoctors();
+
+/* ---------------------------
+   OPEN/CLOSE MODAL
+---------------------------- */
+openAddModal.onclick = () => addModal.classList.remove("hidden");
+closeAddModal.onclick = () => addModal.classList.add("hidden");
+
+/* ---------------------------
+   SAVE PATIENT + CASE
+---------------------------- */
+saveBtn.onclick = async () => {
+
+  const full_name = full_name.value;
+  const gender = gender.value;
+  const age = age.value;
+  const address = address.value;
+  const contact_no = contact_no.value;
+  const doctor_id = doctor_id.value;
+  const doctor_fee = doctor_fee.value;
+
+  if (!doctor_id) {
+    doctor_error.classList.remove("hidden");
+    return;
+  }
+  doctor_error.classList.add("hidden");
+
+  /* 1️⃣ INSERT PATIENT */
+  const { data: patientData, error: patientErr } = await supabaseClient
+    .from("patients")
+    .insert([
+      { full_name, gender, age, address, contact_no }
+    ])
+    .select()
+    .single();
+
+  if (patientErr) {
+    console.error(patientErr);
+    saveStatus.textContent = "❌ Failed to save patient.";
+    saveStatus.className = "text-red-600 font-bold";
+    return;
+  }
+
+  /* 2️⃣ INSERT CASE */
+  const { error: caseErr } = await supabaseClient
+    .from("cases")
+    .insert([
+      {
+        patient_id: patientData.id,
+        patient_name: full_name,
+        doctor_id: doctor_id,
+        doctor_fee: doctor_fee,
+        case_date: new Date().toISOString().split("T")[0]
+      }
+    ]);
+
+  if (caseErr) {
+    console.error(caseErr);
+    saveStatus.textContent = "❌ Patient saved, but case insert failed.";
+    saveStatus.className = "text-red-600 font-bold";
+    return;
+  }
+
+  saveStatus.textContent = "✅ Patient & Case saved!";
+  saveStatus.className = "text-green-600 font-bold";
+
+  addPatientForm.reset();
+  loadPatients();
+};
 
 
-    // -----------------------------
-    // Save Patient Function
-    // -----------------------------
-    document.getElementById("saveBtn").addEventListener("click", async () => {
-        
-        const full_name = document.getElementById("full_name").value;
-        const age = document.getElementById("age").value;
-        const gender = document.getElementById("gender").value;
-        const address = document.getElementById("address").value;
-        const contact_no = document.getElementById("contact_no").value;
-        const doctor_id = document.getElementById("doctor_id").value;
-        const doctor_fee = document.getElementById("doctor_fee").value;
+/* ---------------------------
+   LOAD PATIENT TABLE
+---------------------------- */
+async function loadPatients(filter = "") {
+  let q = supabaseClient
+    .from("patients")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-        // Validate doctor field
-        if (!doctor_id) {
-            document.getElementById("doctorError").classList.remove("hidden");
-            return;
-        } else {
-            document.getElementById("doctorError").classList.add("hidden");
-        }
+  if (filter) q = q.ilike("full_name", `%${filter}%`);
 
-        const { data, error } = await supabase
-            .from("patients")
-            .insert([
-                {
-                    full_name,
-                    age,
-                    gender,
-                    address,
-                    contact_no,
-                    doctor_id,
-                    doctor_fee
-                }
-            ]);
+  const { data } = await q;
 
-        const statusMessage = document.getElementById("statusMessage");
+  patientTable.innerHTML = data
+    .map(
+      (p) => `
+      <tr class="border-b">
+        <td class="py-2 px-3">${p.full_name}</td>
+        <td class="py-2 px-3 text-center">${p.gender}</td>
+        <td class="py-2 px-3 text-center">${p.age}</td>
+        <td class="py-2 px-3 text-center">${p.contact_no}</td>
+      </tr>`
+    )
+    .join("");
+}
 
-        if (error) {
-            console.error("Insert error:", error);
-            statusMessage.textContent = "❌ Failed to save patient.";
-            statusMessage.className = "text-red-600 font-semibold";
-        } else {
-            statusMessage.textContent = "✅ Patient saved successfully!";
-            statusMessage.className = "text-green-600 font-semibold";
-            document.getElementById("patientForm").reset();
-        }
-    });
+loadPatients();
+
+searchBtn.onclick = () => loadPatients(searchInput.value);
+clearBtn.onclick = () => {
+  searchInput.value = "";
+  loadPatients();
+};
 </script>
-
 </body>
 </html>
