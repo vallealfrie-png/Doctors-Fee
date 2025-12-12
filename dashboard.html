@@ -1,187 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinic Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-  <nav class="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow-lg">
-    <h1 class="text-xl font-bold">Clinic Dashboard</h1>
+
+<body class="bg-gray-100">
+
+<!-- NAVBAR -->
+<nav class="bg-blue-600 text-white p-4 flex justify-between">
+    <h1 class="font-bold text-xl">Clinic Dashboard</h1>
     <div class="space-x-4">
-      <a href="dashboard.html" class="hover:underline">Patients</a>
-      <a href="reports.html" class="hover:underline">Reports</a>
-      <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+        <a href="dashboard.html" class="hover:underline">Patients</a>
+        <a href="reports.html" class="hover:underline">Reports</a>
     </div>
-  </nav>
+</nav>
 
-  <div class="p-6 max-w-5xl mx-auto">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold">Patient List</h2>
-      <button id="openAddModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Patient</button>
-    </div>
+<!-- CONTAINER -->
+<div class="max-w-4xl mx-auto mt-8 bg-white p-6 shadow rounded">
 
-    <div class="mb-4 flex gap-2">
-      <input id="searchInput" type="text" placeholder="Search patient name..." class="px-3 py-2 border rounded w-64">
-      <button id="searchBtn" class="bg-blue-600 text-white px-3 py-2 rounded">Search</button>
-      <button id="clearBtn" class="bg-gray-400 text-white px-3 py-2 rounded">Clear</button>
-    </div>
+    <h2 class="text-2xl font-bold mb-4">Add New Patient</h2>
 
-    <table class="w-full bg-white shadow rounded overflow-hidden">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="py-2 px-3 text-left">Name</th>
-          <th class="py-2 px-3">Gender</th>
-          <th class="py-2 px-3">Age</th>
-          <th class="py-2 px-3">Contact</th>
-        </tr>
-      </thead>
-      <tbody id="patientTable"></tbody>
-    </table>
-  </div>
+    <form id="patientForm" class="space-y-4">
 
-  <!-- ADD PATIENT MODAL -->
-  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-4">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-screen overflow-y-auto">
-      <h2 class="text-xl font-bold mb-4">Add Patient & Case</h2>
-
-      <form id="addPatientForm" class="space-y-3">
         <div>
-          <label class="font-semibold">Full Name</label>
-          <input id="full_name" class="w-full border p-2 rounded" required />
+            <label class="block font-semibold">Full Name</label>
+            <input id="full_name" class="w-full p-2 border rounded" />
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="font-semibold">Gender</label>
-            <select id="gender" class="w-full border p-2 rounded">
-              <option>Male</option>
-              <option>Female</option>
+
+        <div>
+            <label class="block font-semibold">Age</label>
+            <input id="age" type="number" class="w-full p-2 border rounded" />
+        </div>
+
+        <div>
+            <label class="block font-semibold">Gender</label>
+            <select id="gender" class="w-full p-2 border rounded">
+                <option value="">Select gender</option>
+                <option>Male</option>
+                <option>Female</option>
             </select>
-          </div>
-          <div>
-            <label class="font-semibold">Age</label>
-            <input id="age" type="number" class="w-full border p-2 rounded" />
-          </div>
         </div>
 
         <div>
-          <label class="font-semibold">Address</label>
-          <input id="address" class="w-full border p-2 rounded" />
+            <label class="block font-semibold">Address</label>
+            <input id="address" class="w-full p-2 border rounded" />
         </div>
 
         <div>
-          <label class="font-semibold">Contact No</label>
-          <input id="contact_no" class="w-full border p-2 rounded" />
+            <label class="block font-semibold">Contact Number</label>
+            <input id="contact_no" class="w-full p-2 border rounded" />
         </div>
 
-        <!-- CASE SECTION -->
-        <hr class="my-4">
-        <h3 class="text-lg font-bold">Case Information</h3>
+        <!-- DOCTOR DROPDOWN -->
+        <div>
+            <label class="block font-semibold">Doctor</label>
+            <select id="doctor_id" class="w-full p-2 border rounded">
+                <option value="">Select doctor</option>
+            </select>
+            <p id="doctorError" class="text-red-600 text-sm hidden">Please select a doctor</p>
+        </div>
 
         <div>
-          <label class="font-semibold">Case No.</label>
-          <input id="case_no" class="w-full border p-2 rounded" required />
+            <label class="block font-semibold">Doctor’s Fee</label>
+            <input id="doctor_fee" type="number" class="w-full p-2 border rounded" />
         </div>
 
-        <div>
-          <label class="font-semibold">Case Date</label>
-          <input id="case_date" type="date" class="w-full border p-2 rounded" required />
-        </div>
+        <button id="saveBtn" type="button" 
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Save
+        </button>
+    </form>
 
-        <h3 class="font-semibold mt-2">Procedures</h3>
-        <div id="proceduresList" class="space-y-2"></div>
-        <button type="button" id="addProcedureBtn" class="bg-blue-500 text-white px-3 py-1 rounded">+ Add Procedure</button>
+    <p id="statusMessage" class="mt-4 font-semibold"></p>
 
-        <div class="flex justify-end gap-2 mt-4">
-          <button type="button" id="closeAddModal" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
-          <button class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
+</div>
 
-  <script>
-    const supabaseClient = supabase.createClient(
-      "https://qmjjfrpwjewcrnavdsks.supabase.co",
-      "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
+<script>
+    // -----------------------------
+    // Supabase Initialization
+    // -----------------------------
+    const supabase = supabase.createClient(
+        "YOUR_SUPABASE_URL",
+        "YOUR_SUPABASE_ANON_KEY"
     );
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    const patientTable = document.getElementById("patientTable");
-    const searchBtn = document.getElementById("searchBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const searchInput = document.getElementById("searchInput");
+    // -----------------------------
+    // Load doctors into dropdown
+    // -----------------------------
+    async function loadDoctors() {
+        const { data, error } = await supabase
+            .from("doctors")
+            .select("*")
+            .order("name");
 
-    const addModal = document.getElementById("addModal");
-    const openAddModal = document.getElementById("openAddModal");
-    const closeAddModal = document.getElementById("closeAddModal");
+        if (error) {
+            console.error("Error loading doctors:", error);
+            return;
+        }
 
-    const proceduresList = document.getElementById("proceduresList");
-    const addProcedureBtn = document.getElementById("addProcedureBtn");
+        const dropdown = document.getElementById("doctor_id");
+        dropdown.innerHTML = `<option value="">Select doctor</option>`;
 
-    function addProcedureField() {
-      const div = document.createElement("div");
-      div.classList.add("border","p-2","rounded","grid","grid-cols-2","gap-2");
-      div.innerHTML = `
-        <div>
-          <label>Procedure Name</label>
-          <input class="proc_name w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label>Doctor</label>
-          <select class="doctor_name w-full border p-2 rounded"></select>
-        </div>
-        <div>
-          <label>Doctor Fee</label>
-          <input class="doctor_fee w-full border p-2 rounded" disabled />
-        </div>
-      `;
-      proceduresList.appendChild(div);
-      loadDoctors(div.querySelector('.doctor_name'), div.querySelector('.doctor_fee'));
+        data.forEach(doc => {
+            const opt = document.createElement("option");
+            opt.value = doc.id;
+            opt.textContent = doc.name;
+            dropdown.appendChild(opt);
+        });
     }
 
-    async function loadDoctors(selectEl, feeEl) {
-      const { data } = await supabaseClient.from('doctor_fees').select('*');
-      selectEl.innerHTML = '';
-      data.forEach(doc => {
-        const opt = document.createElement('option');
-        opt.value = doc.fee_amount;
-        opt.textContent = doc.doctor_name;
-        selectEl.appendChild(opt);
-      });
-      selectEl.addEventListener('change', () => feeEl.value = selectEl.value);
-    }
+    loadDoctors();
 
-    addProcedureBtn.onclick = addProcedureField;
 
-    openAddModal.onclick = () => addModal.classList.remove('hidden');
-    closeAddModal.onclick = () => addModal.classList.add('hidden');
+    // -----------------------------
+    // Save Patient Function
+    // -----------------------------
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+        
+        const full_name = document.getElementById("full_name").value;
+        const age = document.getElementById("age").value;
+        const gender = document.getElementById("gender").value;
+        const address = document.getElementById("address").value;
+        const contact_no = document.getElementById("contact_no").value;
+        const doctor_id = document.getElementById("doctor_id").value;
+        const doctor_fee = document.getElementById("doctor_fee").value;
 
-    logoutBtn.onclick = async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = 'index.html';
-    };
+        // Validate doctor field
+        if (!doctor_id) {
+            document.getElementById("doctorError").classList.remove("hidden");
+            return;
+        } else {
+            document.getElementById("doctorError").classList.add("hidden");
+        }
 
-    async function loadPatients(filter = '') {
-      let query = supabaseClient.from('patients').select('*').order('created_at',{ascending:false});
-      if(filter) query = query.ilike('full_name', `%${filter}%`);
-      const { data } = await query;
+        const { data, error } = await supabase
+            .from("patients")
+            .insert([
+                {
+                    full_name,
+                    age,
+                    gender,
+                    address,
+                    contact_no,
+                    doctor_id,
+                    doctor_fee
+                }
+            ]);
 
-      patientTable.innerHTML = data.map(p => `
-        <tr class='border-b'>
-          <td class='py-2 px-3'>${p.full_name}</td>
-          <td class='py-2 px-3 text-center'>${p.gender}</td>
-          <td class='py-2 px-3 text-center'>${p.age}</td>
-          <td class='py-2 px-3 text-center'>${p.contact_no}</td>
-        </tr>`).join('');
-    }
+        const statusMessage = document.getElementById("statusMessage");
 
-    searchBtn.onclick = () => loadPatients(searchInput.value);
-    clearBtn.onclick = () => { searchInput.value=''; loadPatients(); };
+        if (error) {
+            console.error("Insert error:", error);
+            statusMessage.textContent = "❌ Failed to save patient.";
+            statusMessage.className = "text-red-600 font-semibold";
+        } else {
+            statusMessage.textContent = "✅ Patient saved successfully!";
+            statusMessage.className = "text-green-600 font-semibold";
+            document.getElementById("patientForm").reset();
+        }
+    });
+</script>
 
-    loadPatients();
-  </script>
 </body>
 </html>
