@@ -1,270 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Doctor's Fee Portal — Dashboard</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
 
-<body class="bg-gray-100 min-h-screen">
+  <!-- NAVBAR -->
+  <nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <h1 class="text-xl font-bold">Doctor's Fee Portal</h1>
+      <span id="roleBadge" class="text-sm text-gray-600 hidden"></span>
+    </div>
 
-<!-- NAVBAR (Logout restored) -->
-<nav class="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow-lg">
-  <h1 class="text-xl font-bold">Clinic Dashboard</h1>
-  <div class="space-x-4 flex items-center">
-    <a href="dashboard.html" class="hover:underline">Patients</a>
-    <a href="reports.html" class="hover:underline">Reports</a>
+    <div class="flex items-center gap-3">
+      <button id="navPatients" class="text-sm hover:text-blue-600">Cases</button>
+      <button id="navAdd" class="text-sm hover:text-blue-600">Add Case</button>
+      <button id="navReports" class="text-sm hover:text-blue-600">Reports</button>
+      <button id="logoutBtn" class="ml-4 bg-red-500 text-white px-3 py-1 rounded">Logout</button>
+    </div>
+  </nav>
 
-    <!-- LOGOUT RESTORED -->
-    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
-      Logout
-    </button>
-  </div>
-</nav>
+  <main class="p-6 max-w-6xl mx-auto">
 
-<div class="p-6 max-w-6xl mx-auto">
+    <!-- Add Case / Patient form -->
+    <section id="pageAdd" class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-2xl font-semibold mb-4">Add Case / Patient</h2>
 
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-2xl font-bold">Patient List</h2>
-    <button id="openAddModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Patient</button>
-  </div>
-
-  <!-- SEARCH BAR -->
-  <div class="mb-4 flex gap-2">
-    <input id="searchInput" type="text" placeholder="Search patient name..." class="px-3 py-2 border rounded w-64">
-    <button id="searchBtn" class="bg-blue-600 text-white px-3 py-2 rounded">Search</button>
-    <button id="clearBtn" class="bg-gray-400 text-white px-3 py-2 rounded">Clear</button>
-  </div>
-
-  <!-- PATIENT TABLE -->
-  <table class="w-full bg-white shadow rounded overflow-hidden">
-    <thead class="bg-gray-200">
-      <tr>
-        <th class="py-2 px-3 text-left">Name</th>
-        <th class="py-2 px-3 text-center">Gender</th>
-        <th class="py-2 px-3 text-center">Age</th>
-        <th class="py-2 px-3 text-center">Contact</th>
-      </tr>
-    </thead>
-    <tbody id="patientTable"></tbody>
-  </table>
-</div>
-
-<!-- ADD PATIENT MODAL -->
-<div id="addModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-4">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl max-h-screen overflow-y-auto">
-    <h2 class="text-xl font-bold mb-4">Add Patient</h2>
-
-    <form id="addPatientForm" class="space-y-3">
-
-      <div>
-        <label class="font-semibold">Full Name</label>
-        <input id="full_name" class="w-full border p-2 rounded" required />
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="font-semibold">Gender</label>
-          <select id="gender" class="w-full border p-2 rounded">
-            <option>Male</option>
-            <option>Female</option>
-          </select>
+          <label class="block font-medium">Case No</label>
+          <input id="case_no" class="w-full border p-2 rounded" placeholder="e.g. CASE-20251212-001" />
         </div>
 
         <div>
-          <label class="font-semibold">Age</label>
-          <input id="age" type="number" class="w-full border p-2 rounded" />
+          <label class="block font-medium">Case Date</label>
+          <input id="case_date" type="date" class="w-full border p-2 rounded" />
+        </div>
+
+        <div>
+          <label class="block font-medium">Patient</label>
+          <select id="patient_select" class="w-full border p-2 rounded"></select>
+          <div class="mt-2 text-sm">
+            <label class="inline-flex items-center gap-2">
+              <input id="toggle_new_patient" type="checkbox" /> <span>Add new patient inline</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="newPatientContainer" class="space-y-2 hidden">
+          <div>
+            <label class="block font-medium">Full name</label>
+            <input id="new_full_name" class="w-full border p-2 rounded" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-medium">Gender</label>
+              <select id="new_gender" class="w-full border p-2 rounded">
+                <option>Male</option>
+                <option>Female</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-medium">Age</label>
+              <input id="new_age" type="number" class="w-full border p-2 rounded" />
+            </div>
+          </div>
+          <div>
+            <label class="block font-medium">Contact</label>
+            <input id="new_contact" class="w-full border p-2 rounded" />
+          </div>
+          <div>
+            <label class="block font-medium">Address</label>
+            <input id="new_address" class="w-full border p-2 rounded" />
+          </div>
         </div>
       </div>
 
-      <div>
-        <label class="font-semibold">Address</label>
-        <input id="address" class="w-full border p-2 rounded" />
-      </div>
+      <!-- Procedures -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Procedures</h3>
+          <div class="text-sm text-gray-600">Add one or more procedures</div>
+        </div>
 
-      <div>
-        <label class="font-semibold">Contact Number</label>
-        <input id="contact_no" class="w-full border p-2 rounded" />
-      </div>
+        <div id="proceduresContainer" class="space-y-2 mt-3"></div>
 
-      <!-- DOCTOR -->
-      <div>
-        <label class="font-semibold">Doctor</label>
-        <select id="doctor_id" class="w-full border p-2 rounded">
-          <option value="">Select doctor</option>
-        </select>
-        <span id="doctor_error" class="text-red-600 text-sm hidden">Please select a doctor</span>
-      </div>
+        <div class="mt-2">
+          <button id="addProcedureBtn" class="bg-blue-600 text-white px-3 py-1 rounded">+ Add Procedure</button>
+        </div>
 
-      <div>
-        <label class="font-semibold">Doctor Fee</label>
-        <input id="doctor_fee" type="number" class="w-full border p-2 rounded" />
+        <div class="mt-4 flex justify-end items-center gap-4">
+          <div class="text-lg">
+            <span class="font-semibold">Total:</span>
+            <span id="proceduresTotal">0.00</span>
+          </div>
+          <button id="saveCaseBtn" class="bg-green-600 text-white px-4 py-2 rounded">Save Case</button>
+        </div>
       </div>
+    </section>
 
-      <div class="flex justify-end gap-2 mt-4">
-        <button type="button" id="closeAddModal" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
-        <button id="saveBtn" type="button" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
+    <!-- Cases table -->
+    <section id="pageCases" class="mt-6 bg-white p-6 rounded-lg shadow hidden">
+      <h2 class="text-2xl font-semibold mb-4">Recent Cases</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-sm font-medium">Case No</th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Date</th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Patient</th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Procedures</th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Created By</th>
+            </tr>
+          </thead>
+          <tbody id="casesTbody" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
       </div>
-    </form>
+    </section>
 
-    <p id="saveStatus" class="mt-3 font-bold"></p>
-  </div>
-</div>
+    <!-- Reports placeholder -->
+    <section id="pageReports" class="mt-6 bg-white p-6 rounded-lg shadow hidden">
+      <h2 class="text-2xl font-semibold mb-4">Reports</h2>
+      <p class="text-gray-600">Reports and analytics will go here.</p>
+    </section>
+
+  </main>
 
   <script>
-/* ---------------------------
-   SUPABASE INIT  (FIXED)
----------------------------- */
-const supabaseClient = supabase.createClient(
-  "https://qmjjfrpwjewcrnavdsks.supabase.co",
-  "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
-);
+  // --------------------------
+  // Config (your project keys)
+  // --------------------------
+  const SUPABASE_URL = "https://qmjjfrpwjewcrnavdsks.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF";
 
-/* ---------------------------
-   LOGOUT
----------------------------- */
-document.getElementById("logoutBtn").onclick = async () => {
-  await supabaseClient.auth.signOut();
-  window.location.href = "index.html";
-};
+  // Single client
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ---------------------------
-   LOAD DOCTORS FROM doctors_fees
----------------------------- */
-async function loadDoctors() {
-  const { data, error } = await supabaseClient
-    .from("doctors_fees")
-    .select("*");
+  // Simple DOM selectors
+  const pageAdd = document.getElementById('pageAdd');
+  const pageCases = document.getElementById('pageCases');
+  const pageReports = document.getElementById('pageReports');
 
-  if (error) {
-    console.error("Doctor load error:", error);
-    return;
-  }
+  const navPatients = document.getElementById('navPatients');
+  const navAdd = document.getElementById('navAdd');
+  const navReports = document.getElementById('navReports');
 
-  const doctorSelect = document.getElementById("doctor_id");
-  doctorSelect.innerHTML = `<option value="">Select doctor</option>`;
+  const logoutBtn = document.getElementById('logoutBtn');
+  const roleBadge = document.getElementById('roleBadge');
 
-  data.forEach(doc => {
-    const opt = document.createElement("option");
-    opt.value = doc.id;
-    opt.textContent = doc.doctor_name;
-    opt.setAttribute("data-fee", doc.fee_amount);
-    doctorSelect.appendChild(opt);
-  });
-}
+  // form controls
+  const patientSelect = document.getElementById('patient_select');
+  const toggleNewPatient = document.getElementById('toggle_new_patient');
+  const newPatientContainer = document.getElementById('newPatientContainer');
+  const proceduresContainer = document.getElementById('proceduresContainer');
+  const addProcedureBtn = document.getElementById('addProcedureBtn');
+  const proceduresTotalEl = document.getElementById('proceduresTotal');
+  const saveCaseBtn = document.getElementById('saveCaseBtn');
 
-/* Auto-fill fee when doctor changes */
-document.getElementById("doctor_id").addEventListener("change", (e) => {
-  const fee = e.target.selectedOptions[0].getAttribute("data-fee");
-  document.getElementById("doctor_fee").value = fee || "";
-});
+  const casesTbody = document.getElementById('casesTbody');
 
-loadDoctors();
-
-/* ---------------------------
-   OPEN/CLOSE MODAL
----------------------------- */
-openAddModal.onclick = () => addModal.classList.remove("hidden");
-closeAddModal.onclick = () => addModal.classList.add("hidden");
-
-/* ---------------------------
-   SAVE PATIENT + CASE
----------------------------- */
-saveBtn.onclick = async () => {
-
-  const full_name = full_name.value;
-  const gender = gender.value;
-  const age = age.value;
-  const address = address.value;
-  const contact_no = contact_no.value;
-  const doctor_id = doctor_id.value;
-  const doctor_fee = doctor_fee.value;
-
-  if (!doctor_id) {
-    doctor_error.classList.remove("hidden");
-    return;
-  }
-  doctor_error.classList.add("hidden");
-
-  /* 1️⃣ INSERT PATIENT */
-  const { data: patientData, error: patientErr } = await supabaseClient
-    .from("patients")
-    .insert([
-      { full_name, gender, age, address, contact_no }
-    ])
-    .select()
-    .single();
-
-  if (patientErr) {
-    console.error(patientErr);
-    saveStatus.textContent = "❌ Failed to save patient.";
-    saveStatus.className = "text-red-600 font-bold";
-    return;
-  }
-
-  /* 2️⃣ INSERT CASE */
-  const { error: caseErr } = await supabaseClient
-    .from("cases")
-    .insert([
-      {
-        patient_id: patientData.id,
-        patient_name: full_name,
-        doctor_id: doctor_id,
-        doctor_fee: doctor_fee,
-        case_date: new Date().toISOString().split("T")[0]
+  // Session / user
+  let currentUser = null;
+  (async function initAuth(){
+    const { data } = await supabase.auth.getSession();
+    if (!data?.session) {
+      window.location.href = 'index.html';
+      return;
+    }
+    currentUser = data.session.user;
+    // load role from app_users if available
+    try {
+      const { data: profile } = await supabase.from('app_users').select('role').eq('auth_uid', currentUser.id).single();
+      if (profile?.role) {
+        roleBadge.textContent = profile.role.toUpperCase();
+        roleBadge.classList.remove('hidden');
       }
-    ]);
+    } catch(e){ console.warn('no profile row', e); }
 
-  if (caseErr) {
-    console.error(caseErr);
-    saveStatus.textContent = "❌ Patient saved, but case insert failed.";
-    saveStatus.className = "text-red-600 font-bold";
-    return;
+    // initialize UI data
+    await loadPatients();
+    await loadDoctorFees();
+    await loadCases();
+  })();
+
+  // logout
+  logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  // nav
+  navPatients.addEventListener('click', () => showPage('cases'));
+  navAdd.addEventListener('click', () => showPage('add'));
+  navReports.addEventListener('click', () => showPage('reports'));
+
+  function showPage(name){
+    pageAdd.classList.add('hidden');
+    pageCases.classList.add('hidden');
+    pageReports.classList.add('hidden');
+    if (name === 'add') pageAdd.classList.remove('hidden');
+    if (name === 'cases') pageCases.classList.remove('hidden');
+    if (name === 'reports') pageReports.classList.remove('hidden');
   }
 
-  saveStatus.textContent = "✅ Patient & Case saved!";
-  saveStatus.className = "text-green-600 font-bold";
+  // Patients
+  async function loadPatients(){
+    const { data, error } = await supabase.from('patients').select('id, full_name').order('created_at', { ascending:false });
+    patientSelect.innerHTML = '<option value="">-- Select patient --</option>';
+    if (error) {
+      console.error('loadPatients error', error);
+      return;
+    }
+    data.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.full_name;
+      patientSelect.appendChild(opt);
+    });
+    // Add "add new" option optionally
+    const addOpt = document.createElement('option');
+    addOpt.value = '__new';
+    addOpt.textContent = '-- Add new patient --';
+    patientSelect.appendChild(addOpt);
 
-  addPatientForm.reset();
-  loadPatients();
-};
+    // toggle for new patient when select changes
+    patientSelect.addEventListener('change', () => {
+      const v = patientSelect.value;
+      if (v === '__new') {
+        toggleNewPatient.checked = true;
+        newPatientContainer.classList.remove('hidden');
+      } else {
+        toggleNewPatient.checked = false;
+        newPatientContainer.classList.add('hidden');
+      }
+    });
+  }
 
+  toggleNewPatient.addEventListener('change', () => {
+    newPatientContainer.classList.toggle('hidden', !toggleNewPatient.checked);
+    if (!toggleNewPatient.checked) patientSelect.value = '';
+  });
 
-/* ---------------------------
-   LOAD PATIENT TABLE
----------------------------- */
-async function loadPatients(filter = "") {
-  let q = supabaseClient
-    .from("patients")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Doctor fees list (used to populate dropdown inside each procedure row)
+  let doctorFeesCache = [];
+  async function loadDoctorFees(){
+    // We read from doctor_fees table which contains doctor_name and fee_amount
+    const { data, error } = await supabase.from('doctor_fees').select('id, doctor_name, fee_amount').order('doctor_name');
+    if (error) {
+      console.error('loadDoctorFees error', error);
+      return;
+    }
+    doctorFeesCache = data || [];
+    // ensure at least one procedure row exists
+    if (proceduresContainer.children.length === 0) addProcedureRow();
+  }
 
-  if (filter) q = q.ilike("full_name", `%${filter}%`);
+  // Add / remove procedure rows
+  function addProcedureRow(procedure = { procedure_name:'', doctor_fee_id:'', fee_amount:0 }){
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-12 gap-2 items-center p-2 border rounded';
+    row.innerHTML = `
+      <div class="col-span-5">
+        <input class="w-full p-2 border rounded procedure-name" placeholder="Procedure name" value="${escapeHtml(procedure.procedure_name)}" />
+      </div>
+      <div class="col-span-4">
+        <select class="w-full p-2 border rounded procedure-doctor">
+          <option value="">Select doctor (fee)</option>
+        </select>
+      </div>
+      <div class="col-span-2">
+        <input type="number" class="w-full p-2 border rounded procedure-fee" step="0.01" value="${procedure.fee_amount ?? 0}" />
+      </div>
+      <div class="col-span-1 text-right">
+        <button type="button" class="remove-proc text-sm text-red-600">Remove</button>
+      </div>
+    `;
+    proceduresContainer.appendChild(row);
 
-  const { data } = await q;
+    // populate doctor select
+    const doctorSelect = row.querySelector('.procedure-doctor');
+    doctorFeesCache.forEach(df => {
+      const opt = document.createElement('option');
+      opt.value = df.id;
+      opt.textContent = `${df.doctor_name} — ${formatCurrency(df.fee_amount)}`;
+      opt.dataset.fee = df.fee_amount;
+      doctorSelect.appendChild(opt);
+    });
 
-  patientTable.innerHTML = data
-    .map(
-      (p) => `
-      <tr class="border-b">
-        <td class="py-2 px-3">${p.full_name}</td>
-        <td class="py-2 px-3 text-center">${p.gender}</td>
-        <td class="py-2 px-3 text-center">${p.age}</td>
-        <td class="py-2 px-3 text-center">${p.contact_no}</td>
-      </tr>`
-    )
-    .join("");
-}
+    // when doctor changed -> set fee
+    doctorSelect.addEventListener('change', (e)=>{
+      const sel = e.target;
+      const feeEl = row.querySelector('.procedure-fee');
+      const fee = sel.selectedOptions[0]?.dataset?.fee;
+      if (fee !== undefined) {
+        feeEl.value = Number(fee);
+      }
+      computeProceduresTotal();
+    });
 
-loadPatients();
+    // remove
+    row.querySelector('.remove-proc').addEventListener('click', ()=> {
+      row.remove();
+      computeProceduresTotal();
+    });
 
-searchBtn.onclick = () => loadPatients(searchInput.value);
-clearBtn.onclick = () => {
-  searchInput.value = "";
-  loadPatients();
-};
-</script>
+    // change fee recompute
+    row.querySelector('.procedure-fee').addEventListener('input', computeProceduresTotal);
+    row.querySelector('.procedure-name').addEventListener('input', ()=>{});
+    computeProceduresTotal();
+  }
+
+  addProcedureBtn.addEventListener('click', ()=> addProcedureRow());
+
+  function computeProceduresTotal(){
+    const fees = [...proceduresContainer.querySelectorAll('.procedure-fee')].map(i => parseFloat(i.value) || 0);
+    const total = fees.reduce((a,b)=>a+b,0);
+    proceduresTotalEl.textContent = formatCurrency(total);
+    return total;
+  }
+
+  function formatCurrency(n){
+    if (isNaN(n)) n = 0;
+    return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // Cases listing
+  async function loadCases(){
+    const { data, error } = await supabase.from('cases').select('case_no, case_date, patient_name, procedure_name, created_by').order('created_at', { ascending:false }).limit(100);
+    casesTbody.innerHTML = '';
+    if (error) {
+      console.error('loadCases error', error);
+      return;
+    }
+    data.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-4 py-2 text-sm">${escapeHtml(c.case_no || '')}</td>
+        <td class="px-4 py-2 text-sm">${c.case_date ? new Date(c.case_date).toLocaleDateString() : ''}</td>
+        <td class="px-4 py-2 text-sm">${escapeHtml(c.patient_name || '')}</td>
+        <td class="px-4 py-2 text-sm">${escapeHtml(c.procedure_name || '')}</td>
+        <td class="px-4 py-2 text-sm">${escapeHtml(c.created_by || '')}</td>
+      `;
+      casesTbody.appendChild(tr);
+    });
+  }
+
+  // Save case flow
+  saveCaseBtn.addEventListener('click', async () => {
+    saveCaseBtn.disabled = true;
+    saveCaseBtn.textContent = 'Saving...';
+
+    try {
+      // gather patient
+      let patientId = patientSelect.value;
+      let patientName = '';
+      if (patientId === '__new' || toggleNewPatient.checked){
+        // create patient
+        const newFull = document.getElementById('new_full_name').value.trim();
+        if (!newFull) throw new Error('New patient name is required');
+        const newGender = document.getElementById('new_gender').value;
+        const newAge = document.getElementById('new_age').value || null;
+        const newContact = document.getElementById('new_contact').value || null;
+        const newAddress = document.getElementById('new_address').value || null;
+
+        const { data: pData, error: pErr } = await supabase
+          .from('patients')
+          .insert([{
+            full_name: newFull,
+            gender: newGender,
+            age: newAge,
+            contact_no: newContact,
+            address: newAddress
+          }]).select().single();
+
+        if (pErr) throw pErr;
+        patientId = pData.id;
+        patientName = pData.full_name;
+      } else {
+        // using existing patient
+        const opt = patientSelect.selectedOptions[0];
+        patientName = opt ? opt.textContent : '';
+      }
+
+      // gather case fields
+      const caseNo = document.getElementById('case_no').value || generateCaseNo();
+      const caseDate = document.getElementById('case_date').value || new Date().toISOString().split('T')[0];
+
+      // gather procedures
+      const procRows = [...proceduresContainer.querySelectorAll('div')]; // each row
+      const procedures = procRows.map(r => ({
+        procedure_name: r.querySelector('.procedure-name').value.trim(),
+        doctor_fee_id: r.querySelector('.procedure-doctor').value || null,
+        fee_amount: parseFloat(r.querySelector('.procedure-fee').value) || 0
+      })).filter(p => p.procedure_name || p.doctor_fee_id);
+
+      if (procedures.length === 0) {
+        alert('Please add at least one procedure.');
+        return;
+      }
+
+      // Insert into cases table
+      const proceduresJoined = procedures.map(p => p.procedure_name || '').join(', ');
+
+      // get user id (created_by)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id || null;
+
+      const { data: caseData, error: caseErr } = await supabase
+        .from('cases')
+        .insert([{
+          case_no: caseNo,
+          case_date: caseDate,
+          patient_id: patientId,
+          patient_name: patientName || (document.getElementById('new_full_name')?.value || ''),
+          procedure_name: proceduresJoined,
+          created_by: userId
+        }]).select().single();
+
+      if (caseErr) throw caseErr;
+
+      // Optionally insert per-procedure rows into a separate table if you have it (case_procedures)
+      try {
+        // will fail silently if table doesn't exist; that's fine
+        await Promise.all(procedures.map(p =>
+          supabase.from('case_procedures').insert([{
+            case_id: caseData.id,
+            procedure_name: p.procedure_name,
+            doctor_fee_id: p.doctor_fee_id,
+            fee_amount: p.fee_amount
+          }])
+        ));
+      } catch(e){
+        // ignore (table might not exist) but log
+        console.warn('case_procedures insert skipped or errored:', e);
+      }
+
+      // success -> update UI
+      alert('Case saved successfully.');
+      // reset form
+      document.getElementById('case_no').value = '';
+      document.getElementById('case_date').value = '';
+      patientSelect.value = '';
+      toggleNewPatient.checked = false;
+      newPatientContainer.classList.add('hidden');
+      // clear procedures
+      proceduresContainer.innerHTML = '';
+      addProcedureRow();
+      computeProceduresTotal();
+      await loadPatients();
+      await loadCases();
+
+    } catch (err) {
+      console.error('Save case error', err);
+      alert('Failed to save: ' + (err.message || JSON.stringify(err)));
+    } finally {
+      saveCaseBtn.disabled = false;
+      saveCaseBtn.textContent = 'Save Case';
+    }
+  });
+
+  function generateCaseNo(){
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    const random = Math.floor(Math.random()*9000)+1000;
+    return `CASE-${yyyy}${mm}${dd}-${random}`;
+  }
+
+  // small helpers
+  function escapeHtml(s){
+    if (!s && s !== 0) return '';
+    return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
+  </script>
 </body>
 </html>
