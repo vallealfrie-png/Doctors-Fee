@@ -61,63 +61,73 @@
 </main>
 
 <script>
-// SUPABASE
-const supabase = supabase.createClient(
+/* ---------------- SUPABASE ---------------- */
+const supabaseClient = window.supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
   "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
 );
+window.supabaseClient = supabaseClient;
 
-// LOGOUT
+/* ---------------- LOGOUT ---------------- */
 logoutBtn.onclick = async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   window.location.href = "index.html";
 };
 
-// LOAD DOCTORS
+/* ---------------- LOAD DOCTORS ---------------- */
 async function loadDoctors() {
-  const { data, error } = await supabase.from('doctors').select('id, name').order('name');
-  if (error) return console.error(error);
+  const { data, error } = await supabaseClient
+    .from("doctors")
+    .select("id, doctor_name")
+    .order("doctor_name");
 
-  doctor_id.innerHTML = '<option value="">Select Doctor</option>';
+  if (error) {
+    console.error("Doctor load error:", error);
+    return;
+  }
+
+  doctor_id.innerHTML = `<option value="">Select Doctor</option>`;
   data.forEach(d => {
-    const o = document.createElement('option');
-    o.value = d.id;
-    o.textContent = d.name;
-    doctor_id.appendChild(o);
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.doctor_name;
+    doctor_id.appendChild(opt);
   });
 }
 
-// LOAD DOCTOR FEE
+/* ---------------- LOAD DOCTOR FEE ---------------- */
 doctor_id.onchange = async () => {
-  doctor_fee.value = '';
+  doctor_fee.value = "";
   if (!doctor_id.value) return;
 
-  const { data } = await supabase
-    .from('doctor_fees')
-    .select('fee_amount')
-    .eq('doctor_id', doctor_id.value)
+  const { data, error } = await supabaseClient
+    .from("doctor_fees")
+    .select("fee_amount")
+    .eq("doctor_id", doctor_id.value)
     .single();
 
   if (data) doctor_fee.value = data.fee_amount;
 };
 
-// SAVE PATIENT + CASE
+/* ---------------- SAVE PATIENT + CASE ---------------- */
 patientForm.onsubmit = async (e) => {
   e.preventDefault();
-  formError.classList.add('hidden');
+  formError.classList.add("hidden");
 
-  const user = (await supabase.auth.getUser()).data.user;
+  const user = (await supabaseClient.auth.getUser()).data.user;
 
-  const { data: patient, error: pErr } = await supabase
-    .from('patients')
-    .insert({ name: patient_name.value })
+  const { data: patient, error: pErr } = await supabaseClient
+    .from("patients")
+    .insert({
+      name: patient_name.value
+    })
     .select()
     .single();
 
   if (pErr) return showError(pErr.message);
 
-  const { error: cErr } = await supabase
-    .from('cases')
+  const { error: cErr } = await supabaseClient
+    .from("cases")
     .insert({
       patient_id: patient.id,
       case_date: case_date.value,
@@ -135,33 +145,39 @@ patientForm.onsubmit = async (e) => {
 
 function showError(msg) {
   formError.textContent = msg;
-  formError.classList.remove('hidden');
+  formError.classList.remove("hidden");
 }
 
-// LOAD CASES
+/* ---------------- LOAD CASES ---------------- */
 async function loadCases() {
-  const { data } = await supabase
-    .from('cases')
-    .select('case_date, procedure_name, amount, patients(name), doctors(name)')
-    .order('case_date', { ascending: false });
+  const { data } = await supabaseClient
+    .from("cases")
+    .select(`
+      case_date,
+      procedure_name,
+      amount,
+      patients(name),
+      doctors(doctor_name)
+    `)
+    .order("case_date", { ascending: false });
 
-  casesTable.innerHTML = '';
+  casesTable.innerHTML = "";
   data?.forEach(c => {
     casesTable.innerHTML += `
       <tr class="border-t">
         <td class="p-2">${c.case_date}</td>
-        <td class="p-2">${c.patients?.name ?? ''}</td>
-        <td class="p-2">${c.doctors?.name ?? ''}</td>
+        <td class="p-2">${c.patients?.name ?? ""}</td>
+        <td class="p-2">${c.doctors?.doctor_name ?? ""}</td>
         <td class="p-2">${c.procedure_name}</td>
         <td class="p-2">₱${c.amount}</td>
       </tr>`;
   });
 }
 
-// INIT
+/* ---------------- INIT ---------------- */
 loadDoctors();
 loadCases();
 </script>
-
 </body>
 </html>
+
