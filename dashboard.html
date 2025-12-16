@@ -90,7 +90,7 @@ async function loadDoctors() {
   data.forEach(d => {
     const opt = document.createElement("option");
     opt.value = d.id;
-    opt.textContent = d.doctor_name;
+    opt.textContent = d.name;
     doctor_id.appendChild(opt);
   });
 }
@@ -157,7 +157,7 @@ async function loadCases() {
       procedure_name,
       amount,
       patients(name),
-      doctors(doctor_name)
+      doctors(name)
     `)
     .order("case_date", { ascending: false });
 
@@ -180,6 +180,7 @@ loadCases();
 </script>
 </body>
 </html>
+
 
 
 
