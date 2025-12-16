@@ -118,9 +118,7 @@ patientForm.onsubmit = async (e) => {
 
   const { data: patient, error: pErr } = await supabaseClient
     .from("patients")
-    .insert({
-      name: patient_name.value
-    })
+    .insert({ name: patient_name.value })
     .select()
     .single();
 
@@ -178,8 +176,10 @@ async function loadCases() {
 loadDoctors();
 loadCases();
 </script>
+
 </body>
 </html>
+
 
 
 
