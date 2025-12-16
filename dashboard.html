@@ -79,7 +79,7 @@ async function loadDoctors() {
   const { data, error } = await supabaseClient
     .from("doctors")
     .select("id, name")
-    .order("doctor_name");
+    .order("name");
 
   if (error) {
     console.error("Doctor load error:", error);
@@ -180,5 +180,6 @@ loadCases();
 </script>
 </body>
 </html>
+
 
 
