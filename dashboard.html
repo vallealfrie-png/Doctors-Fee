@@ -17,170 +17,130 @@
 </nav>
 
 <!-- MAIN -->
-<main class="p-6 max-w-7xl mx-auto">
+<main class="p-6 max-w-7xl mx-auto space-y-8">
 
-  <!-- ADD CASE -->
-  <section class="bg-white rounded-xl shadow p-6 mb-8">
-    <h2 class="text-lg font-bold mb-4">Add Case</h2>
+<!-- ADD CASE -->
+<section class="bg-white rounded-xl shadow p-6">
+  <h2 class="text-lg font-bold mb-4">Add Case</h2>
 
-    <form id="patientForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <form id="caseForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      <!-- CASE NO -->
-      <input
-        type="text"
-        id="case_no"
-        placeholder="Case No"
-        class="border p-2 rounded"
-        required
-      />
+    <input id="case_no" placeholder="Case No" class="border p-2 rounded" required />
+    <input id="case_date" type="date" class="border p-2 rounded" required />
 
-      <!-- CASE DATE -->
-      <input
-        type="date"
-        id="case_date"
-        class="border p-2 rounded"
-        required
-      />
+    <input id="patient_name" placeholder="Patient Name" class="border p-2 rounded" required />
 
-      <!-- PATIENT NAME -->
-      <input
-        type="text"
-        id="patient_name"
-        placeholder="Patient Name"
-        class="border p-2 rounded"
-        required
-      />
+    <select id="doctor_id" class="border p-2 rounded" required>
+      <option value="">Select Doctor</option>
+    </select>
 
-      <!-- DOCTOR -->
-      <select id="doctor_id" class="border p-2 rounded" required>
-        <option value="">Select Doctor</option>
-      </select>
+    <input
+      id="doctor_fee"
+      type="number"
+      placeholder="Doctor Fee"
+      class="border p-2 rounded"
+      required
+    />
 
-      <!-- DOCTOR FEE -->
-      <input
-        type="number"
-        id="doctor_fee"
-        placeholder="Doctor Fee"
-        class="border p-2 rounded"
-        required
-      />
+    <!-- PROCEDURES -->
+    <div class="col-span-full">
+      <label class="font-semibold">Procedures</label>
 
-      <!-- PROCEDURES (UI ONLY) -->
-      <div class="col-span-full">
-        <label class="font-semibold">Procedures (optional)</label>
-
-        <div id="proceduresContainer" class="space-y-2 mt-2">
-          <div class="flex gap-2 procedure-row">
-            <input
-              type="text"
-              class="procedure-name border p-2 rounded w-full"
-              placeholder="Procedure name"
-            />
-            <input
-              type="number"
-              class="procedure-amount border p-2 rounded w-32"
-              placeholder="Amount"
-            />
-            <button
-              type="button"
-              class="removeProcedure bg-red-500 text-white px-2 rounded hidden"
-            >✕</button>
-          </div>
+      <div id="proceduresContainer" class="space-y-2">
+        <div class="flex gap-2 procedure-row">
+          <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
+          <input class="procedure-amount border p-2 rounded w-32" placeholder="Amount" type="number" required />
+          <button type="button" class="removeProcedure hidden bg-red-500 text-white px-2 rounded">✕</button>
         </div>
-
-        <button
-          type="button"
-          id="addProcedureBtn"
-          class="mt-2 text-blue-600 font-semibold"
-        >
-          + Add another procedure
-        </button>
       </div>
 
-      <!-- TOTAL -->
-      <div>
-        <label class="font-semibold">Total Amount (procedures)</label>
-        <input
-          id="total_amount"
-          class="border p-2 rounded bg-gray-100"
-          readonly
-        />
-      </div>
-
-      <!-- SAVE -->
-      <button
-        type="submit"
-        class="col-span-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-      >
-        Save
+      <button type="button" id="addProcedureBtn" class="mt-2 text-blue-600 font-semibold">
+        + Add another procedure
       </button>
-    </form>
+    </div>
 
-    <p id="formError" class="text-red-600 mt-3 hidden"></p>
-  </section>
+    <div>
+      <label class="font-semibold">Total Amount</label>
+      <input id="total_amount" class="border p-2 rounded bg-gray-100" readonly />
+    </div>
 
-  <!-- CASE LIST -->
-  <section class="bg-white rounded-xl shadow p-6">
-    <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
+    <button class="col-span-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+      Save Case
+    </button>
 
-    <table class="w-full text-sm">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="p-2 text-left">Case No</th>
-          <th class="p-2 text-left">Date</th>
-          <th class="p-2 text-left">Patient</th>
-          <th class="p-2 text-left">Doctor</th>
-          <th class="p-2 text-left">Amount</th>
-        </tr>
-      </thead>
-      <tbody id="casesTable"></tbody>
-    </table>
-  </section>
+  </form>
+
+  <p id="formError" class="text-red-600 mt-3 hidden"></p>
+</section>
+
+<!-- CASE LIST -->
+<section class="bg-white rounded-xl shadow p-6">
+  <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
+
+  <table class="w-full text-sm">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="p-2 text-left">Case No</th>
+        <th class="p-2 text-left">Date</th>
+        <th class="p-2 text-left">Patient</th>
+        <th class="p-2 text-left">Doctor</th>
+        <th class="p-2 text-left">Doctor Fee</th>
+        <th class="p-2 text-left">Total</th>
+      </tr>
+    </thead>
+    <tbody id="casesTable"></tbody>
+  </table>
+</section>
 
 </main>
 
 <script>
-/* ---------------- SUPABASE ---------------- */
-const supabaseClient = window.supabase.createClient(
+/* ================= SUPABASE ================= */
+const supabaseClient = supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
   "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
 );
 
-/* ---------------- LOGOUT ---------------- */
+/* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
   await supabaseClient.auth.signOut();
-  window.location.href = "index.html";
+  location.href = "index.html";
 };
 
-/* ---------------- LOAD DOCTORS ---------------- */
+/* ================= LOAD DOCTORS ================= */
 async function loadDoctors() {
   const { data, error } = await supabaseClient
     .from("doctors")
     .select("id, name")
     .order("name");
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+  if (error) return console.error(error);
 
   doctor_id.innerHTML = `<option value="">Select Doctor</option>`;
   data.forEach(d => {
-    const opt = document.createElement("option");
-    opt.value = d.id;
-    opt.textContent = d.name;
-    doctor_id.appendChild(opt);
+    const o = document.createElement("option");
+    o.value = d.id;
+    o.textContent = d.name;
+    doctor_id.appendChild(o);
   });
 }
 
-/* ---------------- ADD PROCEDURE ---------------- */
+/* ================= PROCEDURES ================= */
+function computeTotal() {
+  let total = 0;
+  document.querySelectorAll(".procedure-amount").forEach(i => {
+    total += Number(i.value || 0);
+  });
+  total_amount.value = total;
+}
+
 addProcedureBtn.onclick = () => {
   const row = document.createElement("div");
   row.className = "flex gap-2 procedure-row";
 
   row.innerHTML = `
-    <input type="text" class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" />
-    <input type="number" class="procedure-amount border p-2 rounded w-32" placeholder="Amount" />
+    <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
+    <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" required />
     <button type="button" class="removeProcedure bg-red-500 text-white px-2 rounded">✕</button>
   `;
 
@@ -193,53 +153,31 @@ addProcedureBtn.onclick = () => {
   proceduresContainer.appendChild(row);
 };
 
-/* ---------------- TOTAL ---------------- */
-function computeTotal() {
-  let total = 0;
-  document.querySelectorAll(".procedure-amount").forEach(i => {
-    total += Number(i.value || 0);
-  });
-  total_amount.value = total;
-}
-
-document.addEventListener("input", e => {
-  if (e.target.classList.contains("procedure-amount")) {
-    computeTotal();
-  }
-});
-
-/* ---------------- SAVE CASE ---------------- */
-patientForm.onsubmit = async (e) => {
+/* ================= SAVE CASE ================= */
+caseForm.onsubmit = async (e) => {
   e.preventDefault();
   formError.classList.add("hidden");
 
-  const { data: auth } = await supabaseClient.auth.getUser();
-  if (!auth?.user) {
-    showError("Not authenticated");
-    return;
-  }
+  const user = (await supabaseClient.auth.getUser()).data.user;
+  if (!user) return showError("Not logged in");
 
-  const payload = {
+  const total = Number(total_amount.value || 0);
+
+  const { error } = await supabaseClient.from("cases").insert({
     case_no: case_no.value,
-    patient_name: patient_name.value,
     case_date: case_date.value,
+    patient_name: patient_name.value,
     doctor_id: doctor_id.value,
-    amount: Number(doctor_fee.value),
-    created_by: auth.user.id
-  };
+    doctor_fee: Number(doctor_fee.value),
+    total_amount: total,
+    created_by: user.id
+  });
 
-  const { error } = await supabaseClient
-    .from("cases")
-    .insert(payload);
+  if (error) return showError(error.message);
 
-  if (error) {
-    showError(error.message);
-    return;
-  }
-
-  patientForm.reset();
+  caseForm.reset();
   proceduresContainer.innerHTML = "";
-  total_amount.value = "";
+  addProcedureBtn.click();
   loadCases();
 };
 
@@ -248,7 +186,7 @@ function showError(msg) {
   formError.classList.remove("hidden");
 }
 
-/* ---------------- LOAD CASES ---------------- */
+/* ================= LOAD CASES ================= */
 async function loadCases() {
   const { data, error } = await supabaseClient
     .from("cases")
@@ -258,17 +196,13 @@ async function loadCases() {
       patient_name,
       doctor_fee,
       total_amount,
-      doctors ( name )
+      doctors(name)
     `)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Load cases error:", error.message);
-    return;
-  }
+  if (error) return console.error(error);
 
   casesTable.innerHTML = "";
-
   data.forEach(c => {
     casesTable.innerHTML += `
       <tr class="border-t">
@@ -276,19 +210,17 @@ async function loadCases() {
         <td class="p-2">${c.case_date}</td>
         <td class="p-2">${c.patient_name}</td>
         <td class="p-2">${c.doctors?.name ?? "-"}</td>
-        <td class="p-2">₱${Number(c.doctor_fee || 0).toFixed(2)}</td>
-        <td class="p-2">₱${Number(c.total_amount || 0).toFixed(2)}</td>
+        <td class="p-2">₱${Number(c.doctor_fee).toFixed(2)}</td>
+        <td class="p-2">₱${Number(c.total_amount).toFixed(2)}</td>
       </tr>
     `;
   });
 }
 
-
-/* ---------------- INIT ---------------- */
+/* ================= INIT ================= */
 loadDoctors();
 loadCases();
 </script>
 
 </body>
 </html>
-
