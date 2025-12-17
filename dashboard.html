@@ -156,35 +156,50 @@ patientForm.onsubmit = async (e) => {
 
   const user = (await supabaseClient.auth.getUser()).data.user;
 
+  /* 1️⃣ CREATE PATIENT */
   const { data: patient, error: pErr } = await supabaseClient
     .from("patients")
-    .insert({ full_name: patient_name.value })
+    .insert({
+      full_name: patient_name.value
+    })
     .select()
     .single();
 
   if (pErr) return showError(pErr.message);
 
-  const { error: cErr } = await supabaseClient
-    .from("cases")
-    .insert({
+  /* 2️⃣ GENERATE CASE NO */
+  const caseNo = "CASE-" + Date.now();
+
+  /* 3️⃣ PREPARE PROCEDURES */
+  const procedures = [];
+  document.querySelectorAll(".procedure-row").forEach(row => {
+    const name = row.querySelector(".procedure-name").value;
+    const amount = row.querySelector(".procedure-amount").value;
+
+    procedures.push({
+      case_no: caseNo,
       patient_id: patient.id,
       case_date: case_date.value,
-      procedure_name: procedure_name.value,
-      amount: procedure_amount.value,
+      procedure_name: name,
+      amount: amount,
       doctor_id: doctor_id.value,
       created_by: user.id
     });
+  });
+
+  /* 4️⃣ INSERT ALL PROCEDURES */
+  const { error: cErr } = await supabaseClient
+    .from("cases")
+    .insert(procedures);
 
   if (cErr) return showError(cErr.message);
 
   patientForm.reset();
+  proceduresContainer.innerHTML = "";
+  addProcedureBtn.click(); // add first row back
   loadCases();
 };
 
-function showError(msg) {
-  formError.textContent = msg;
-  formError.classList.remove("hidden");
-}
 
 /* ---------------- LOAD CASES ---------------- */
 async function loadCases() {
@@ -209,6 +224,37 @@ async function loadCases() {
         <td class="p-2">${c.procedure_name}</td>
         <td class="p-2">₱${c.amount}</td>
       </tr>`;
+    addProcedureBtn.onclick = () => {
+  const row = document.createElement("div");
+  row.className = "flex gap-2 procedure-row";
+
+  row.innerHTML = `
+    <input type="text" class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
+    <input type="number" class="procedure-amount border p-2 rounded w-32" placeholder="Amount" required />
+    <button type="button" class="removeProcedure bg-red-500 text-white px-2 rounded">✕</button>
+  `;
+
+  row.querySelector(".removeProcedure").onclick = () => {
+    row.remove();
+    computeTotal();
+  };
+
+  row.querySelector(".procedure-amount").oninput = computeTotal;
+
+  proceduresContainer.appendChild(row);
+};
+function computeTotal() {
+  let total = 0;
+  document.querySelectorAll(".procedure-amount").forEach(input => {
+    total += Number(input.value || 0);
+  });
+  total_amount.value = total;
+}
+
+document.addEventListener("input", e => {
+  if (e.target.classList.contains("procedure-amount")) {
+    computeTotal();
+  }
   });
 }
 
@@ -219,6 +265,7 @@ loadCases();
 
 </body>
 </html>
+
 
 
 
