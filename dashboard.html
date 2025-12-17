@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clinic Dashboard</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -34,13 +35,7 @@
       <option value="">Select Doctor</option>
     </select>
 
-    <input
-      id="doctor_fee"
-      type="number"
-      placeholder="Doctor Fee"
-      class="border p-2 rounded"
-      required
-    />
+    <input id="doctor_fee" type="number" placeholder="Doctor Fee" class="border p-2 rounded" required />
 
     <!-- PROCEDURES -->
     <div class="col-span-full">
@@ -49,7 +44,7 @@
       <div id="proceduresContainer" class="space-y-2">
         <div class="flex gap-2 procedure-row">
           <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
-          <input class="procedure-amount border p-2 rounded w-32" placeholder="Amount" type="number" required />
+          <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" required />
           <button type="button" class="removeProcedure hidden bg-red-500 text-white px-2 rounded">✕</button>
         </div>
       </div>
@@ -95,20 +90,20 @@
 </main>
 
 <script>
-(async () => {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-
-  if (!session) {
-    alert("Session expired. Please log in again.");
-    location.href = "index.html";
-  }
-})();
-
 /* ================= SUPABASE ================= */
 const supabaseClient = supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
   "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
 );
+
+/* ================= SESSION CHECK ================= */
+(async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) {
+    alert("Session expired. Please log in again.");
+    location.href = "index.html";
+  }
+})();
 
 /* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
@@ -127,14 +122,14 @@ async function loadDoctors() {
 
   doctor_id.innerHTML = `<option value="">Select Doctor</option>`;
   data.forEach(d => {
-    const o = document.createElement("option");
-    o.value = d.id;
-    o.textContent = d.name;
-    doctor_id.appendChild(o);
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.name;
+    doctor_id.appendChild(opt);
   });
 }
 
-/* ================= PROCEDURES ================= */
+/* ================= TOTAL COMPUTATION ================= */
 function computeTotal() {
   let total = 0;
   document.querySelectorAll(".procedure-amount").forEach(i => {
@@ -143,6 +138,14 @@ function computeTotal() {
   total_amount.value = total;
 }
 
+/* Listen globally so first + future inputs work */
+proceduresContainer.addEventListener("input", e => {
+  if (e.target.classList.contains("procedure-amount")) {
+    computeTotal();
+  }
+});
+
+/* ================= ADD PROCEDURE ================= */
 addProcedureBtn.onclick = () => {
   const row = document.createElement("div");
   row.className = "flex gap-2 procedure-row";
@@ -158,7 +161,6 @@ addProcedureBtn.onclick = () => {
     computeTotal();
   };
 
-  row.querySelector(".procedure-amount").oninput = computeTotal;
   proceduresContainer.appendChild(row);
 };
 
@@ -168,39 +170,39 @@ caseForm.onsubmit = async (e) => {
   formError.classList.add("hidden");
 
   const { data: { user } } = await supabaseClient.auth.getUser();
-if (!user) {
-  showError("Not authenticated");
-  return;
-}
+  if (!user) return showError("Not authenticated");
 
-const { error } = await supabaseClient
-  .from("cases")
-  .insert([{
-    case_no,
-    case_date,
-    patient_name,
-    procedure_name,
-    doctor_id,
-    doctor_fee,
-    total_amount,
-    created_by: user.id   // ✅ THIS IS THE KEY
-  }]);
+  const procedures = [];
+  document.querySelectorAll(".procedure-row").forEach(row => {
+    procedures.push(row.querySelector(".procedure-name").value);
+  });
 
-if (error) {
-  console.error(error);
-  showError(error.message);
-}
+  const { error } = await supabaseClient
+    .from("cases")
+    .insert([{
+      case_no: case_no.value,
+      case_date: case_date.value,
+      patient_name: patient_name.value,
+      procedure_name: procedures.join(", "),
+      doctor_id: doctor_id.value,
+      doctor_fee: Number(doctor_fee.value),
+      total_amount: Number(total_amount.value),
+      created_by: user.id
+    }]);
+
+  if (error) return showError(error.message);
 
   caseForm.reset();
-  proceduresContainer.innerHTML = "";
-  addProcedureBtn.click();
+  proceduresContainer.innerHTML = `
+    <div class="flex gap-2 procedure-row">
+      <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
+      <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" required />
+      <button type="button" class="removeProcedure hidden bg-red-500 text-white px-2 rounded">✕</button>
+    </div>
+  `;
+  computeTotal();
   loadCases();
 };
-
-function showError(msg) {
-  formError.textContent = msg;
-  formError.classList.remove("hidden");
-}
 
 /* ================= LOAD CASES ================= */
 async function loadCases() {
@@ -233,6 +235,11 @@ async function loadCases() {
   });
 }
 
+function showError(msg) {
+  formError.textContent = msg;
+  formError.classList.remove("hidden");
+}
+
 /* ================= INIT ================= */
 loadDoctors();
 loadCases();
@@ -240,5 +247,3 @@ loadCases();
 
 </body>
 </html>
-
-
