@@ -26,8 +26,9 @@
 
     <input id="patient_name" class="border p-2 rounded" placeholder="Patient Name" required />
     <input id="case_date" type="date" class="border p-2 rounded" required />
-
+    <input type="text" id="case_no" placeholder="Case No" class="border p-2 rounded" required />
     <select id="doctor_id" class="border p-2 rounded" required>
+      
       <option value="">Select Doctor</option>
     </select>
 
@@ -177,7 +178,7 @@ patientForm.onsubmit = async e => {
   }
 
   await supabaseClient.from("cases").insert({
-    case_no: "CASE-" + Date.now(),
+    case_no: case_no.value,
     patient_id: patient.id,
     case_date: case_date.value,
     doctor_id: doctor_id.value,
@@ -216,3 +217,4 @@ loadCases();
 
 </body>
 </html>
+
