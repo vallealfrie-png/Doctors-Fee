@@ -32,9 +32,49 @@
 
       <input type="number" id="doctor_fee" placeholder="Doctor Fee" class="border p-2 rounded bg-gray-100" readonly />
 
-      <input type="text" id="procedure_name" placeholder="Procedure Name" class="border p-2 rounded" required />
-      <input type="number" id="procedure_amount" placeholder="Procedure Amount" class="border p-2 rounded" required />
+      <!-- PROCEDURES -->
+<div class="col-span-full">
+  <label class="font-semibold">Procedures</label>
 
+  <div id="proceduresContainer" class="space-y-2">
+    <div class="flex gap-2 procedure-row">
+      <input
+        type="text"
+        class="procedure-name border p-2 rounded w-full"
+        placeholder="Procedure name"
+        required
+      />
+      <input
+        type="number"
+        class="procedure-amount border p-2 rounded w-32"
+        placeholder="Amount"
+        required
+      />
+      <button
+        type="button"
+        class="removeProcedure bg-red-500 text-white px-2 rounded hidden"
+      >✕</button>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    id="addProcedureBtn"
+    class="mt-2 text-blue-600 font-semibold"
+  >
+    + Add another procedure
+  </button>
+</div>
+
+<!-- TOTAL -->
+<div>
+  <label class="font-semibold">Total Amount</label>
+  <input
+    id="total_amount"
+    class="border p-2 rounded bg-gray-100"
+    readonly
+  />
+</div>
       <button type="submit" class="col-span-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Save</button>
     </form>
 
@@ -179,6 +219,7 @@ loadCases();
 
 </body>
 </html>
+
 
 
 
