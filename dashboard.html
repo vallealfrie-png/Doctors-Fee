@@ -256,29 +256,33 @@ async function loadCases() {
       case_no,
       case_date,
       patient_name,
-      amount,
-      doctors(name)
+      doctor_fee,
+      total_amount,
+      doctors ( name )
     `)
-    .order("case_date", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error(error);
+    console.error("Load cases error:", error.message);
     return;
   }
 
   casesTable.innerHTML = "";
+
   data.forEach(c => {
     casesTable.innerHTML += `
       <tr class="border-t">
         <td class="p-2">${c.case_no}</td>
         <td class="p-2">${c.case_date}</td>
         <td class="p-2">${c.patient_name}</td>
-        <td class="p-2">${c.doctors?.name ?? ""}</td>
-        <td class="p-2">₱${c.amount}</td>
+        <td class="p-2">${c.doctors?.name ?? "-"}</td>
+        <td class="p-2">₱${Number(c.doctor_fee || 0).toFixed(2)}</td>
+        <td class="p-2">₱${Number(c.total_amount || 0).toFixed(2)}</td>
       </tr>
     `;
   });
 }
+
 
 /* ---------------- INIT ---------------- */
 loadDoctors();
@@ -287,3 +291,4 @@ loadCases();
 
 </body>
 </html>
+
