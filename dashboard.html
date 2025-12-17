@@ -95,6 +95,15 @@
 </main>
 
 <script>
+(async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+    alert("Session expired. Please log in again.");
+    location.href = "index.html";
+  }
+})();
+
 /* ================= SUPABASE ================= */
 const supabaseClient = supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
@@ -159,21 +168,28 @@ caseForm.onsubmit = async (e) => {
   formError.classList.add("hidden");
 
   const { data: { user } } = await supabaseClient.auth.getUser();
-if (!user) return showError("Not authenticated");
-  
-  const total = Number(total_amount.value || 0);
+if (!user) {
+  showError("Not authenticated");
+  return;
+}
 
-  const { error } = await supabaseClient.from("cases").insert({
-    case_no: case_no.value,
-    case_date: case_date.value,
-    patient_name: patient_name.value,
-    doctor_id: doctor_id.value,
-    doctor_fee: Number(doctor_fee.value),
-    total_amount: total,
-    created_by: user.id
-  });
+const { error } = await supabaseClient
+  .from("cases")
+  .insert([{
+    case_no,
+    case_date,
+    patient_name,
+    procedure_name,
+    doctor_id,
+    doctor_fee,
+    total_amount,
+    created_by: user.id   // ✅ THIS IS THE KEY
+  }]);
 
-  if (error) return showError(error.message);
+if (error) {
+  console.error(error);
+  showError(error.message);
+}
 
   caseForm.reset();
   proceduresContainer.innerHTML = "";
@@ -224,4 +240,5 @@ loadCases();
 
 </body>
 </html>
+
 
