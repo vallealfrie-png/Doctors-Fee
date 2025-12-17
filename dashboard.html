@@ -158,9 +158,9 @@ caseForm.onsubmit = async (e) => {
   e.preventDefault();
   formError.classList.add("hidden");
 
-  const user = (await supabaseClient.auth.getUser()).data.user;
-  if (!user) return showError("Not logged in");
-
+  const { data: { user } } = await supabaseClient.auth.getUser();
+if (!user) return showError("Not authenticated");
+  
   const total = Number(total_amount.value || 0);
 
   const { error } = await supabaseClient.from("cases").insert({
@@ -224,3 +224,4 @@ loadCases();
 
 </body>
 </html>
+
