@@ -30,7 +30,13 @@
         <option value="">Select Doctor</option>
       </select>
 
-      <input type="number" id="doctor_fee" placeholder="Doctor Fee" class="border p-2 rounded bg-gray-100" readonly />
+      <input
+  type="number"
+  id="doctor_fee"
+  placeholder="Doctor Fee"
+  class="border p-2 rounded"
+  required
+/>
 
       <!-- PROCEDURES -->
 <div class="col-span-full">
@@ -154,9 +160,13 @@ patientForm.onsubmit = async (e) => {
   e.preventDefault();
   formError.classList.add("hidden");
 
-  const user = (await supabaseClient.auth.getUser()).data.user;
+  const { data: auth } = await supabaseClient.auth.getUser();
+  if (!auth?.user) {
+    showError("Not authenticated");
+    return;
+  }
 
-  /* 1️⃣ CREATE PATIENT */
+  /* 1️⃣ INSERT PATIENT */
   const { data: patient, error: pErr } = await supabaseClient
     .from("patients")
     .insert({
@@ -165,66 +175,62 @@ patientForm.onsubmit = async (e) => {
     .select()
     .single();
 
-  if (pErr) return showError(pErr.message);
+  if (pErr) {
+    showError(pErr.message);
+    return;
+  }
 
-  /* 2️⃣ GENERATE CASE NO */
-  const caseNo = "CASE-" + Date.now();
-
-  /* 3️⃣ PREPARE PROCEDURES */
-  const procedures = [];
-  document.querySelectorAll(".procedure-row").forEach(row => {
-    const name = row.querySelector(".procedure-name").value;
-    const amount = row.querySelector(".procedure-amount").value;
-
-    procedures.push({
-      case_no: caseNo,
-      patient_id: patient.id,
-      case_date: case_date.value,
-      procedure_name: name,
-      amount: amount,
-      doctor_id: doctor_id.value,
-      created_by: user.id
-    });
-  });
-
-  /* 4️⃣ INSERT ALL PROCEDURES */
+  /* 2️⃣ INSERT CASE */
   const { error: cErr } = await supabaseClient
     .from("cases")
-    .insert(procedures);
+    .insert({
+      case_no: "CASE-" + Date.now(),
+      patient_id: patient.id,
+      case_date: case_date.value,
+      doctor_id: doctor_id.value,
+      amount: doctor_fee.value,   // ✅ THIS IS THE DOCTOR FEE
+      created_by: auth.user.id
+    });
 
-  if (cErr) return showError(cErr.message);
+  if (cErr) {
+    showError(cErr.message);
+    return;
+  }
 
   patientForm.reset();
-  proceduresContainer.innerHTML = "";
-  addProcedureBtn.click(); // add first row back
   loadCases();
 };
 
-
 /* ---------------- LOAD CASES ---------------- */
 async function loadCases() {
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("cases")
     .select(`
       case_date,
-      procedure_name,
       amount,
-      patients(name),
+      patients(full_name),
       doctors(name)
     `)
     .order("case_date", { ascending: false });
 
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   casesTable.innerHTML = "";
-  data?.forEach(c => {
+  data.forEach(c => {
     casesTable.innerHTML += `
       <tr class="border-t">
         <td class="p-2">${c.case_date}</td>
-        <td class="p-2">${c.patients?.name ?? ""}</td>
-        <td class="p-2">${c.doctors?.doctor_name ?? ""}</td>
-        <td class="p-2">${c.procedure_name}</td>
+        <td class="p-2">${c.patients?.full_name ?? ""}</td>
+        <td class="p-2">${c.doctors?.name ?? ""}</td>
+        <td class="p-2">Doctor Fee</td>
         <td class="p-2">₱${c.amount}</td>
       </tr>`;
-    addProcedureBtn.onclick = () => {
+  });
+}
+addProcedureBtn.onclick = () => {
   const row = document.createElement("div");
   row.className = "flex gap-2 procedure-row";
 
@@ -238,12 +244,8 @@ async function loadCases() {
     row.remove();
     computeTotal();
   };
-
-  row.querySelector(".procedure-amount").oninput = computeTotal;
-
-  proceduresContainer.appendChild(row);
-};
-function computeTotal() {
+  
+  function computeTotal() {
   let total = 0;
   document.querySelectorAll(".procedure-amount").forEach(input => {
     total += Number(input.value || 0);
@@ -256,9 +258,6 @@ document.addEventListener("input", e => {
     computeTotal();
   }
   });
-  });
-}
-
 /* ---------------- INIT ---------------- */
 loadDoctors();
 loadCases();
@@ -266,6 +265,7 @@ loadCases();
 
 </body>
 </html>
+
 
 
 
