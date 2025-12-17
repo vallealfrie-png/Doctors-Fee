@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body class="bg-gray-100 min-h-screen">
 
 <!-- NAVBAR -->
@@ -15,263 +16,203 @@
   <button id="logoutBtn" class="text-red-600 font-semibold">Logout</button>
 </nav>
 
-<!-- MAIN -->
 <main class="p-6 max-w-7xl mx-auto">
 
-  <!-- ADD PATIENT / CASE -->
-  <section class="bg-white rounded-xl shadow p-6 mb-8">
-    <h2 class="text-lg font-bold mb-4">Add Patient & Case</h2>
+<!-- ADD PATIENT -->
+<section class="bg-white rounded-xl shadow p-6 mb-8">
+  <h2 class="text-lg font-bold mb-4">Add Patient & Case</h2>
 
-    <form id="patientForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <input type="text" id="patient_name" placeholder="Patient Name" class="border p-2 rounded" required />
-      <input type="date" id="case_date" class="border p-2 rounded" required />
+  <form id="patientForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      <select id="doctor_id" class="border p-2 rounded" required>
-        <option value="">Select Doctor</option>
-      </select>
+    <input id="patient_name" class="border p-2 rounded" placeholder="Patient Name" required />
+    <input id="case_date" type="date" class="border p-2 rounded" required />
 
-      <input
-  type="number"
-  id="doctor_fee"
-  placeholder="Doctor Fee"
-  class="border p-2 rounded"
-  required
-/>
+    <select id="doctor_id" class="border p-2 rounded" required>
+      <option value="">Select Doctor</option>
+    </select>
 
-      <!-- PROCEDURES -->
-<div class="col-span-full">
-  <label class="font-semibold">Procedures</label>
+    <input id="doctor_fee" type="number" class="border p-2 rounded" placeholder="Doctor Fee" required />
 
-  <div id="proceduresContainer" class="space-y-2">
-    <div class="flex gap-2 procedure-row">
-      <input
-        type="text"
-        class="procedure-name border p-2 rounded w-full"
-        placeholder="Procedure name"
-        required
-      />
-      <input
-        type="number"
-        class="procedure-amount border p-2 rounded w-32"
-        placeholder="Amount"
-        required
-      />
-      <button
-        type="button"
-        class="removeProcedure bg-red-500 text-white px-2 rounded hidden"
-      >✕</button>
+    <!-- PROCEDURES -->
+    <div class="col-span-full">
+      <label class="font-semibold">Procedures</label>
+
+      <div id="proceduresContainer" class="space-y-2">
+        <div class="flex gap-2 procedure-row">
+          <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" />
+          <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" />
+          <button type="button" class="removeProcedure hidden bg-red-500 text-white px-2 rounded">✕</button>
+        </div>
+      </div>
+
+      <button type="button" id="addProcedureBtn" class="mt-2 text-blue-600 font-semibold">
+        + Add another procedure
+      </button>
     </div>
-  </div>
 
-  <button
-    type="button"
-    id="addProcedureBtn"
-    class="mt-2 text-blue-600 font-semibold"
-  >
-    + Add another procedure
-  </button>
-</div>
+    <!-- TOTAL -->
+    <div>
+      <label class="font-semibold">Total Amount</label>
+      <input id="total_amount" class="border p-2 rounded bg-gray-100" readonly />
+    </div>
 
-<!-- TOTAL -->
-<div>
-  <label class="font-semibold">Total Amount</label>
-  <input
-    id="total_amount"
-    class="border p-2 rounded bg-gray-100"
-    readonly
-  />
-</div>
-      <button type="submit" class="col-span-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Save</button>
-    </form>
+    <button class="col-span-full bg-blue-600 text-white py-2 rounded">Save</button>
+  </form>
 
-    <p id="formError" class="text-red-600 mt-3 hidden"></p>
-  </section>
+  <p id="formError" class="text-red-600 mt-3 hidden"></p>
+</section>
 
-  <!-- CASE LIST -->
-  <section class="bg-white rounded-xl shadow p-6">
-    <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
-    <table class="w-full text-sm">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="p-2 text-left">Date</th>
-          <th class="p-2 text-left">Patient</th>
-          <th class="p-2 text-left">Doctor</th>
-          <th class="p-2 text-left">Procedure</th>
-          <th class="p-2 text-left">Amount</th>
-        </tr>
-      </thead>
-      <tbody id="casesTable"></tbody>
-    </table>
-  </section>
+<!-- CASE LIST -->
+<section class="bg-white rounded-xl shadow p-6">
+  <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="p-2">Date</th>
+        <th class="p-2">Patient</th>
+        <th class="p-2">Doctor</th>
+        <th class="p-2">Amount</th>
+      </tr>
+    </thead>
+    <tbody id="casesTable"></tbody>
+  </table>
+</section>
 
 </main>
 
 <script>
-/* ---------------- SUPABASE ---------------- */
-const supabaseClient = window.supabase.createClient(
+/* ================= SUPABASE ================= */
+const supabaseClient = supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
   "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
 );
-window.supabaseClient = supabaseClient;
 
-/* ---------------- LOGOUT ---------------- */
+/* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
   await supabaseClient.auth.signOut();
-  window.location.href = "index.html";
+  location.href = "index.html";
 };
 
-/* ---------------- LOAD DOCTORS ---------------- */
-async function loadDoctors() {
-  const { data, error } = await supabaseClient
-    .from("doctors")
-    .select("id, name")
-    .order("name");
-
-  if (error) {
-    console.error("Doctor load error:", error);
-    return;
-  }
-
-  doctor_id.innerHTML = `<option value="">Select Doctor</option>`;
-  data.forEach(d => {
-    const opt = document.createElement("option");
-    opt.value = d.id;
-    opt.textContent = d.name;
-    doctor_id.appendChild(opt);
-  });
-}
-
-/* ---------------- LOAD DOCTOR FEE ---------------- */
-doctor_id.onchange = async () => {
-  doctor_fee.value = "";
-  if (!doctor_id.value) return;
-
-  const { data, error } = await supabaseClient
-    .from("doctor_fees")
-    .select("fee_amount")
-    .eq("doctor_id", doctor_id.value)
-    .single();
-
-  if (data) doctor_fee.value = data.fee_amount;
-};
-
-/* ---------------- SAVE PATIENT + CASE ---------------- */
-patientForm.onsubmit = async (e) => {
-  e.preventDefault();
-  formError.classList.add("hidden");
-
-  const { data: auth } = await supabaseClient.auth.getUser();
-  if (!auth?.user) {
-    showError("Not authenticated");
-    return;
-  }
-
-  /* 1️⃣ INSERT PATIENT */
-  const { data: patient, error: pErr } = await supabaseClient
-    .from("patients")
-    .insert({
-      full_name: patient_name.value
-    })
-    .select()
-    .single();
-
-  if (pErr) {
-    showError(pErr.message);
-    return;
-  }
-
-  /* 2️⃣ INSERT CASE */
-  const { error: cErr } = await supabaseClient
-    .from("cases")
-    .insert({
-      case_no: "CASE-" + Date.now(),
-      patient_id: patient.id,
-      case_date: case_date.value,
-      doctor_id: doctor_id.value,
-      amount: doctor_fee.value,   // ✅ THIS IS THE DOCTOR FEE
-      created_by: auth.user.id
-    });
-
-  if (cErr) {
-    showError(cErr.message);
-    return;
-  }
-
-  patientForm.reset();
-  loadCases();
-};
-
-/* ---------------- LOAD CASES ---------------- */
-async function loadCases() {
-  const { data, error } = await supabaseClient
-    .from("cases")
-    .select(`
-      case_date,
-      amount,
-      patients(full_name),
-      doctors(name)
-    `)
-    .order("case_date", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  casesTable.innerHTML = "";
-  data.forEach(c => {
-    casesTable.innerHTML += `
-      <tr class="border-t">
-        <td class="p-2">${c.case_date}</td>
-        <td class="p-2">${c.patients?.full_name ?? ""}</td>
-        <td class="p-2">${c.doctors?.name ?? ""}</td>
-        <td class="p-2">Doctor Fee</td>
-        <td class="p-2">₱${c.amount}</td>
-      </tr>`;
-  });
-}
-addProcedureBtn.onclick = () => {
-  const row = document.createElement("div");
-  row.className = "flex gap-2 procedure-row";
-
-  row.innerHTML = `
-    <input type="text" class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
-    <input type="number" class="procedure-amount border p-2 rounded w-32" placeholder="Amount" required />
-    <button type="button" class="removeProcedure bg-red-500 text-white px-2 rounded">✕</button>
-  `;
-
-  row.querySelector(".removeProcedure").onclick = () => {
-    row.remove();
-    computeTotal();
-  };
-  
-  function computeTotal() {
-  let total = 0;
-  document.querySelectorAll(".procedure-amount").forEach(input => {
-    total += Number(input.value || 0);
+/* ================= TOTAL ================= */
+function computeTotal() {
+  let total = Number(doctor_fee.value || 0);
+  document.querySelectorAll(".procedure-amount").forEach(i => {
+    total += Number(i.value || 0);
   });
   total_amount.value = total;
 }
 
 document.addEventListener("input", e => {
-  if (e.target.classList.contains("procedure-amount")) {
+  if (e.target.matches(".procedure-amount") || e.target === doctor_fee) {
     computeTotal();
   }
+});
+
+/* ================= ADD PROCEDURE ================= */
+addProcedureBtn.onclick = () => {
+  const row = document.createElement("div");
+  row.className = "flex gap-2 procedure-row";
+  row.innerHTML = `
+    <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" />
+    <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" />
+    <button type="button" class="removeProcedure bg-red-500 text-white px-2 rounded">✕</button>
+  `;
+  row.querySelector(".removeProcedure").onclick = () => {
+    row.remove();
+    computeTotal();
+  };
+  proceduresContainer.appendChild(row);
+};
+
+/* ================= LOAD DOCTORS ================= */
+async function loadDoctors() {
+  const { data, error } = await supabaseClient
+    .from("doctors")
+    .select("id,name")
+    .order("name");
+
+  if (error) return console.error(error);
+
+  doctor_id.innerHTML = `<option value="">Select Doctor</option>`;
+  data.forEach(d => {
+    doctor_id.innerHTML += `<option value="${d.id}">${d.name}</option>`;
   });
-/* ---------------- INIT ---------------- */
+}
+
+/* ================= LOAD DOCTOR FEE ================= */
+doctor_id.onchange = async () => {
+  doctor_fee.value = "";
+  if (!doctor_id.value) return;
+
+  const { data } = await supabaseClient
+    .from("doctor_fees")
+    .select("fee_amount")
+    .eq("doctor_id", doctor_id.value)
+    .single();
+
+  if (data) {
+    doctor_fee.value = data.fee_amount;
+    computeTotal();
+  }
+};
+
+/* ================= SAVE ================= */
+patientForm.onsubmit = async e => {
+  e.preventDefault();
+  formError.classList.add("hidden");
+
+  const { data: auth } = await supabaseClient.auth.getUser();
+  if (!auth?.user) return;
+
+  const { data: patient, error } = await supabaseClient
+    .from("patients")
+    .insert({ full_name: patient_name.value })
+    .select()
+    .single();
+
+  if (error) {
+    formError.textContent = error.message;
+    formError.classList.remove("hidden");
+    return;
+  }
+
+  await supabaseClient.from("cases").insert({
+    case_no: "CASE-" + Date.now(),
+    patient_id: patient.id,
+    case_date: case_date.value,
+    doctor_id: doctor_id.value,
+    amount: total_amount.value,
+    created_by: auth.user.id
+  });
+
+  patientForm.reset();
+  loadCases();
+};
+
+/* ================= LOAD CASES ================= */
+async function loadCases() {
+  const { data } = await supabaseClient
+    .from("cases")
+    .select(`case_date, amount, patients(full_name), doctors(name)`)
+    .order("case_date", { ascending: false });
+
+  casesTable.innerHTML = "";
+  data?.forEach(c => {
+    casesTable.innerHTML += `
+      <tr class="border-t">
+        <td class="p-2">${c.case_date}</td>
+        <td class="p-2">${c.patients?.full_name}</td>
+        <td class="p-2">${c.doctors?.name}</td>
+        <td class="p-2">₱${c.amount}</td>
+      </tr>
+    `;
+  });
+}
+
+/* ================= INIT ================= */
 loadDoctors();
 loadCases();
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
