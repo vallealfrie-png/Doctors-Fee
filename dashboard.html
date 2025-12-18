@@ -146,9 +146,9 @@ document.getElementById('addDoctorBtn').onclick = addDoctorRow;
 document.getElementById('caseForm').onsubmit = async e => {
   e.preventDefault();
 
-  const caseNo = caseNo.value;
-  const caseDate = caseDate.value;
-  const patientName = patientName.value;
+  const caseNoVal = document.getElementById('caseNo').value;
+  const caseDateVal = document.getElementById('caseDate').value;
+  const patientNameVal = document.getElementById('patientName').value;
 
   const doctorRows = [...document.querySelectorAll('#doctorContainer > div')];
 
@@ -159,9 +159,9 @@ document.getElementById('caseForm').onsubmit = async e => {
     if (!doctorId || !fee) continue;
 
     await supabaseClient.from('cases').insert({
-      case_no: caseNo,
-      case_date: caseDate,
-      patient_name: patientName,
+      case_no: caseNoVal,
+      case_date: caseDateVal,
+      patient_name: patientNameVal,
       doctor_id: doctorId,
       doctor_fee: fee,
       status: 'Pending',
@@ -169,8 +169,8 @@ document.getElementById('caseForm').onsubmit = async e => {
     });
   }
 
-  document.getElementById('successMsg').classList.remove('hidden');
-  setTimeout(() => document.getElementById('successMsg').classList.add('hidden'), 2500);
+  successMsg.classList.remove('hidden');
+  setTimeout(() => successMsg.classList.add('hidden'), 2500);
 
   caseForm.reset();
   doctorContainer.innerHTML = '';
@@ -182,18 +182,27 @@ document.getElementById('caseForm').onsubmit = async e => {
   LOAD CASES
 *************************/
 async function loadCases() {
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('cases')
     .select(`
+      id,
       case_no,
       case_date,
       patient_name,
       doctor_fee,
       status,
       accounting_note,
-      doctors(name,specialization)
+      doctors:doctor_id (
+        name,
+        specialization
+      )
     `)
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   const tbody = document.getElementById('casesTable');
   tbody.innerHTML = '';
@@ -221,7 +230,12 @@ async function loadCases() {
         <td class="p-2">${c.case_no}</td>
         <td class="p-2">${c.case_date}</td>
         <td class="p-2">${c.patient_name}</td>
-        <td class="p-2">${c.doctors?.name || ''}<br><span class="text-xs text-gray-500">${c.doctors?.specialization || ''}</span></td>
+        <td class="p-2">
+          ${c.doctors?.name || '-'}<br>
+          <span class="text-xs text-gray-500">
+            ${c.doctors?.specialization || ''}
+          </span>
+        </td>
         <td class="p-2">₱${Number(c.doctor_fee).toLocaleString()}</td>
         <td class="p-2">${statusBadge}</td>
         <td class="p-2">
@@ -230,6 +244,8 @@ async function loadCases() {
       </tr>`;
   });
 }
+
 </script>
 </body>
 </html>
+
