@@ -186,15 +186,18 @@ caseForm.onsubmit = async e => {
 
   if (!breakdown.length) return alert("Add at least one doctor");
 
-  const { error } = await supabaseClient.from("cases").insert({
-    case_no: caseNo.value,
-    case_date: caseDate.value,
-    patient_name: patientName.value,
-    doctor_fee: total,
-    doctor_breakdown: breakdown,
-    case_status: "active",
-    acctg_status: "Pending"
-  });
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+const { error } = await supabaseClient.from("cases").insert({
+  case_no: caseNo.value,
+  case_date: caseDate.value,
+  patient_name: patientName.value,
+  doctor_fee: total,
+  doctor_breakdown: breakdown,
+  case_status: "active",
+  acctg_status: "Pending",
+  created_by: user.id   // ✅ REQUIRED FOR RLS
+});
 
   if (error) return alert(error.message);
 
@@ -257,3 +260,4 @@ async function loadCases() {
 </script>
 </body>
 </html>
+
