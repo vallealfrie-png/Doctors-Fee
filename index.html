@@ -5,13 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <!-- Load Supabase (NO DEFER!) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background-image: url('https://images.unsplash.com/photo-1588776814546-ef1e0b8f7d1b?auto=format&fit=crop&w=1470&q=80'); /* medical/corporate vibe */
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Slight overlay to make the login card stand out */
+    .overlay {
+      background-color: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(5px);
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md shadow-xl rounded-2xl p-8 overlay">
+    
+    <!-- Logo Centered -->
+    <div class="flex justify-center mb-6">
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Corporate Logo" class="h-20 w-auto" />
+    </div>
+
     <h2 class="text-2xl font-bold text-center mb-6">Staff Login</h2>
 
     <form id="login-form" class="space-y-4">
@@ -39,7 +57,6 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
-      // USE THE SAME NAME "supabase"
       const supabase = window.supabase.createClient(
         "https://qmjjfrpwjewcrnavdsks.supabase.co",
         "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
