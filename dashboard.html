@@ -38,8 +38,8 @@
 <!-- MAIN -->
 <main class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-<!-- ADD CASE -->
-<section class="bg-white rounded shadow p-4">
+<!-- ADD CASE (HIDDEN BY DEFAULT) -->
+<section id="addCaseSection" class="bg-white rounded shadow p-4 hidden">
   <h2 class="font-semibold mb-4">New Case</h2>
 
   <form id="caseForm" class="space-y-3">
@@ -84,6 +84,21 @@
 
 </main>
 
+<!-- FLOATING ADD CASE BUTTON -->
+<button
+  id="addCaseFab"
+  class="fixed bottom-6 right-6 bg-blue-600 text-white
+         h-14 w-14 rounded-full shadow-lg
+         flex items-center justify-center
+         hover:w-40 transition-all duration-300
+         overflow-hidden group z-50">
+
+  <span class="text-2xl">+</span>
+  <span class="ml-3 hidden group-hover:inline whitespace-nowrap">
+    Add Case
+  </span>
+</button>
+
 <script>
 /* ================= SUPABASE ================= */
 const supabaseClient = supabase.createClient(
@@ -113,6 +128,12 @@ function showToast(msg) {
   toast.classList.remove("hidden");
   setTimeout(() => toast.classList.add("hidden"), 2500);
 }
+
+/* ================= ADD CASE TOGGLE ================= */
+addCaseFab.onclick = () => {
+  addCaseSection.classList.toggle("hidden");
+  addCaseSection.scrollIntoView({ behavior: "smooth" });
+};
 
 /* ================= DOCTORS ================= */
 async function loadDoctors() {
