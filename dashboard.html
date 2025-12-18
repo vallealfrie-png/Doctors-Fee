@@ -10,15 +10,16 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen">
-  <!-- SUCCESS TOAST -->
+
+<!-- SUCCESS TOAST -->
 <div
   id="successToast"
   class="fixed top-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg
-         opacity-0 translate-y-[-10px] transition-all duration-300 pointer-events-none"
+         opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none z-50"
 >
-  ✅ Case saved successfully
+  ✅ Saved successfully
 </div>
-  
+
 <!-- NAVBAR -->
 <nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
   <h1 class="text-xl font-bold">Clinic Dashboard</h1>
@@ -28,8 +29,8 @@
 <!-- MAIN -->
 <main class="p-6 max-w-7xl mx-auto space-y-8">
 
-<!-- ADD CASE -->
-<section class="bg-white rounded-xl shadow p-6">
+<!-- ADD CASE (HIDDEN BY DEFAULT) -->
+<section id="addCaseSection" class="bg-white rounded-xl shadow p-6 hidden">
   <h2 class="text-lg font-bold mb-4">Add Case</h2>
 
   <form id="caseForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -49,7 +50,7 @@
     <div class="col-span-full">
       <label class="font-semibold">Procedures</label>
 
-      <div id="proceduresContainer" class="space-y-2">
+      <div id="proceduresContainer" class="space-y-2 mt-2">
         <div class="flex gap-2 procedure-row">
           <input class="procedure-name border p-2 rounded w-full" placeholder="Procedure name" required />
           <input class="procedure-amount border p-2 rounded w-32" type="number" placeholder="Amount" required />
@@ -76,7 +77,7 @@
   <p id="formError" class="text-red-600 mt-3 hidden"></p>
 </section>
 
-<!-- CASE LIST -->
+<!-- PREVIOUS CASES -->
 <section class="bg-white rounded-xl shadow p-6">
   <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
 
@@ -96,6 +97,19 @@
 </section>
 
 </main>
+
+<!-- FLOATING ADD CASE BUTTON -->
+<button
+  id="addCaseFab"
+  class="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full
+         w-14 h-14 flex items-center justify-center shadow-lg
+         hover:w-40 transition-all duration-300 overflow-hidden group z-40"
+>
+  <span class="text-2xl">+</span>
+  <span class="ml-3 hidden group-hover:inline whitespace-nowrap">
+    Add Case
+  </span>
+</button>
 
 <script>
 /* ================= SUPABASE ================= */
@@ -118,19 +132,30 @@ logoutBtn.onclick = async () => {
   await supabaseClient.auth.signOut();
   location.href = "index.html";
 };
-  
-/* ================= SUCCESS / ERROR ================= */  
-  function showSuccess(message = "Saved successfully") {
+
+/* ================= TOAST ================= */
+function showSuccess(msg) {
   const toast = document.getElementById("successToast");
-  toast.textContent = `✅ ${message}`;
-  toast.classList.remove("opacity-0", "translate-y-[-10px]");
+  toast.textContent = `✅ ${msg}`;
+  toast.classList.remove("opacity-0", "-translate-y-4");
   toast.classList.add("opacity-100", "translate-y-0");
 
   setTimeout(() => {
-    toast.classList.add("opacity-0", "translate-y-[-10px]");
+    toast.classList.add("opacity-0", "-translate-y-4");
   }, 2000);
 }
-  
+
+function showError(msg) {
+  formError.textContent = msg;
+  formError.classList.remove("hidden");
+}
+
+/* ================= ADD CASE TOGGLE ================= */
+addCaseFab.onclick = () => {
+  addCaseSection.classList.toggle("hidden");
+  addCaseSection.scrollIntoView({ behavior: "smooth" });
+};
+
 /* ================= LOAD DOCTORS ================= */
 async function loadDoctors() {
   const { data, error } = await supabaseClient
@@ -149,7 +174,7 @@ async function loadDoctors() {
   });
 }
 
-/* ================= TOTAL COMPUTATION ================= */
+/* ================= TOTAL ================= */
 function computeTotal() {
   let total = 0;
   document.querySelectorAll(".procedure-amount").forEach(i => {
@@ -158,7 +183,6 @@ function computeTotal() {
   total_amount.value = total;
 }
 
-/* Listen globally so first + future inputs work */
 proceduresContainer.addEventListener("input", e => {
   if (e.target.classList.contains("procedure-amount")) {
     computeTotal();
@@ -193,8 +217,8 @@ caseForm.onsubmit = async (e) => {
   if (!user) return showError("Not authenticated");
 
   const procedures = [];
-  document.querySelectorAll(".procedure-row").forEach(row => {
-    procedures.push(row.querySelector(".procedure-name").value);
+  document.querySelectorAll(".procedure-row").forEach(r => {
+    procedures.push(r.querySelector(".procedure-name").value);
   });
 
   const { error } = await supabaseClient
@@ -212,6 +236,8 @@ caseForm.onsubmit = async (e) => {
 
   if (error) return showError(error.message);
 
+  showSuccess("Case saved successfully");
+
   caseForm.reset();
   proceduresContainer.innerHTML = `
     <div class="flex gap-2 procedure-row">
@@ -222,6 +248,7 @@ caseForm.onsubmit = async (e) => {
   `;
   computeTotal();
   loadCases();
+  addCaseSection.classList.add("hidden");
 };
 
 /* ================= LOAD CASES ================= */
@@ -241,6 +268,18 @@ async function loadCases() {
   if (error) return console.error(error);
 
   casesTable.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    casesTable.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-4 text-center text-gray-500">
+          No cases recorded yet
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   data.forEach(c => {
     casesTable.innerHTML += `
       <tr class="border-t">
@@ -255,11 +294,6 @@ async function loadCases() {
   });
 }
 
-function showError(msg) {
-  formError.textContent = msg;
-  formError.classList.remove("hidden");
-}
-
 /* ================= INIT ================= */
 loadDoctors();
 loadCases();
@@ -267,4 +301,3 @@ loadCases();
 
 </body>
 </html>
-
