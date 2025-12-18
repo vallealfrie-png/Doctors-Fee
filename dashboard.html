@@ -2,250 +2,310 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Staff Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinic Dashboard</title>
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    .fade-success {
-      animation: fadeInOut 2.5s ease-in-out;
-    }
-    @keyframes fadeInOut {
-      0% { opacity: 0; transform: translateY(-6px); }
-      15% { opacity: 1; transform: translateY(0); }
-      85% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-  </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen">
 
-<!-- HEADER -->
-<header class="bg-white shadow p-4 flex justify-between items-center">
-  <h1 class="text-xl font-semibold">Staff Dashboard</h1>
-  <button id="logoutBtn" class="text-red-600 hover:underline">Logout</button>
-</header>
-
-<!-- SUCCESS MESSAGE -->
-<div id="successMsg" class="hidden fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow fade-success">
-  ✔ Case saved successfully
+<!-- SUCCESS TOAST -->
+<div
+  id="successToast"
+  class="fixed top-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg
+         opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none z-50"
+>
+  ✅ Success
 </div>
 
-<!-- MAIN -->
-<main class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- NAVBAR -->
+<nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+  <h1 class="text-xl font-bold">Clinic Dashboard</h1>
+  <button id="logoutBtn" class="text-red-600 font-semibold">Logout</button>
+</nav>
 
-  <!-- ENTRY FORM -->
-  <section class="bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-4">New Case Entry</h2>
+<main class="p-6 max-w-7xl mx-auto space-y-6">
 
-    <form id="caseForm" class="space-y-3">
-      <input type="text" id="caseNo" placeholder="Case No" class="w-full border p-2 rounded" required />
-      <input type="date" id="caseDate" class="w-full border p-2 rounded" required />
-      <input type="text" id="patientName" placeholder="Patient Name" class="w-full border p-2 rounded" required />
+<!-- ADD CASE -->
+<section id="addCaseSection" class="bg-white rounded-xl shadow p-6 hidden">
+  <h2 class="text-lg font-bold mb-4">Add Case</h2>
 
-      <!-- DOCTOR + FEE -->
+  <form id="caseForm" class="space-y-4">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <input id="case_no" placeholder="Case No" class="border p-2 rounded" required />
+      <input id="case_date" type="date" class="border p-2 rounded" required />
+      <input id="patient_name" placeholder="Patient Name" class="border p-2 rounded" required />
+    </div>
+
+    <!-- DOCTORS -->
+    <div>
+      <h3 class="font-semibold mb-2">Doctors</h3>
       <div id="doctorContainer" class="space-y-2"></div>
 
-      <button type="button" id="addDoctorBtn" class="text-blue-600 text-sm">+ Add Doctor</button>
-
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-        Save Case
+      <button
+        type="button"
+        id="addDoctorBtn"
+        class="mt-2 text-blue-600 font-semibold"
+      >
+        + Add Doctor
       </button>
-    </form>
-  </section>
-
-  <!-- CASE LIST -->
-  <section class="lg:col-span-2 bg-white rounded shadow p-4">
-    <h2 class="font-semibold mb-4">Cases</h2>
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm border">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="p-2 border">Case</th>
-            <th class="p-2 border">Date</th>
-            <th class="p-2 border">Patient</th>
-            <th class="p-2 border">Doctors</th>
-            <th class="p-2 border">Doctor Fee</th>
-            <th class="p-2 border">Status</th>
-            <th class="p-2 border">Action</th>
-          </tr>
-        </thead>
-        <tbody id="casesTable"></tbody>
-      </table>
     </div>
-  </section>
+
+    <div>
+      <label class="font-semibold">Total Doctor Fee</label>
+      <input id="totalDoctorFee" class="border p-2 rounded bg-gray-100" readonly />
+    </div>
+
+    <button class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+      Save Case
+    </button>
+
+  </form>
+
+  <p id="formError" class="text-red-600 mt-3 hidden"></p>
+</section>
+
+<!-- SEARCH -->
+<input
+  id="searchInput"
+  placeholder="Search case / patient / doctor..."
+  class="border p-2 rounded w-full"
+/>
+
+<!-- CASE LIST -->
+<section class="bg-white rounded-xl shadow p-6">
+  <h2 class="text-lg font-bold mb-4">Previous Cases</h2>
+
+  <table class="w-full text-sm">
+    <thead class="bg-gray-200">
+      <tr>
+        <th class="p-2">Case</th>
+        <th class="p-2">Date</th>
+        <th class="p-2">Patient</th>
+        <th class="p-2">Doctors</th>
+        <th class="p-2">Total Fee</th>
+        <th class="p-2">Action</th>
+      </tr>
+    </thead>
+    <tbody id="casesTable"></tbody>
+  </table>
+</section>
+
 </main>
 
+<!-- FLOATING ADD BUTTON -->
+<button
+  id="addCaseFab"
+  class="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full
+         w-14 h-14 flex items-center justify-center shadow-lg
+         hover:w-40 transition-all duration-300 overflow-hidden group"
+>
+  <span class="text-2xl">+</span>
+  <span class="ml-3 hidden group-hover:inline">Add Case</span>
+</button>
+
 <script>
-/*************************
-  SUPABASE INIT
-*************************/
+/* ================= SUPABASE ================= */
 const supabaseClient = supabase.createClient(
   "https://qmjjfrpwjewcrnavdsks.supabase.co",
   "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
 );
 
-let currentUser = null;
-
-/*************************
-  AUTH CHECK
-*************************/
-(async () => {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) location.href = 'index.html';
-  currentUser = user;
-  loadDoctors();
-  loadCases();
-})();
-
-/*************************
-  LOGOUT
-*************************/
-document.getElementById('logoutBtn').onclick = async () => {
-  await supabaseClient.auth.signOut();
-  location.href = 'index.html';
-};
-
-/*************************
-  DOCTORS
-*************************/
 let doctors = [];
+let allCases = [];
 
-async function loadDoctors() {
-  const { data } = await supabaseClient.from('doctors').select('*').order('name');
-  doctors = data || [];
-  addDoctorRow();
+/* ================= TOAST ================= */
+function toast(msg) {
+  successToast.textContent = `✅ ${msg}`;
+  successToast.classList.remove("opacity-0", "-translate-y-4");
+  setTimeout(() => {
+    successToast.classList.add("opacity-0", "-translate-y-4");
+  }, 2000);
 }
 
-function addDoctorRow() {
-  const row = document.createElement('div');
-  row.className = 'flex gap-2';
-
-  row.innerHTML = `
-    <select class="doctorSelect border p-2 rounded w-2/3">
-      <option value="">Select Doctor</option>
-      ${doctors.map(d => `<option value="${d.id}">${d.name} (${d.specialization})</option>`).join('')}
-    </select>
-    <input type="number" placeholder="Doctor Fee" class="doctorFee border p-2 rounded w-1/3" />
-  `;
-
-  document.getElementById('doctorContainer').appendChild(row);
-}
-
-document.getElementById('addDoctorBtn').onclick = addDoctorRow;
-
-/*************************
-  SAVE CASE
-*************************/
-document.getElementById('caseForm').onsubmit = async e => {
-  e.preventDefault();
-
-  const caseNoVal = document.getElementById('caseNo').value;
-  const caseDateVal = document.getElementById('caseDate').value;
-  const patientNameVal = document.getElementById('patientName').value;
-
-  const doctorRows = [...document.querySelectorAll('#doctorContainer > div')];
-
-  for (const row of doctorRows) {
-    const doctorId = row.querySelector('.doctorSelect').value;
-    const fee = row.querySelector('.doctorFee').value;
-
-    if (!doctorId || !fee) continue;
-
-    await supabaseClient.from('cases').insert({
-      case_no: caseNoVal,
-      case_date: caseDateVal,
-      patient_name: patientNameVal,
-      doctor_id: doctorId,
-      doctor_fee: fee,
-      status: 'Pending',
-      created_by: currentUser.id
-    });
-  }
-
-  successMsg.classList.remove('hidden');
-  setTimeout(() => successMsg.classList.add('hidden'), 2500);
-
-  caseForm.reset();
-  doctorContainer.innerHTML = '';
-  addDoctorRow();
-  loadCases();
+/* ================= UI ================= */
+addCaseFab.onclick = () => {
+  addCaseSection.classList.toggle("hidden");
+  addCaseSection.scrollIntoView({ behavior: "smooth" });
 };
 
-/*************************
-  LOAD CASES
-*************************/
-async function loadCases() {
+/* ================= LOAD DOCTORS ================= */
+async function loadDoctors() {
   const { data, error } = await supabaseClient
-    .from('cases')
-    .select(`
-      id,
-      case_no,
-      case_date,
-      patient_name,
-      doctor_fee,
-      status,
-      accounting_note,
-      doctors:doctor_id (
-        name,
-        specialization
-      )
-    `)
-    .order('created_at', { ascending: false });
+    .from("doctors")
+    .select("id, name")
+    .order("name");
 
   if (error) {
     console.error(error);
-    return;
+    return [];
   }
 
-  const tbody = document.getElementById('casesTable');
-  tbody.innerHTML = '';
+  doctors = data;
+  addDoctorRow();
+  return data;
+}
 
-  (data || []).forEach(c => {
-    let statusBadge = `
-      <span class="px-2 py-1 rounded text-xs
-        ${c.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : ''}
-        ${c.status === 'Verified' ? 'bg-green-100 text-green-700' : ''}
-        ${c.status === 'Rejected' ? 'bg-red-100 text-red-700' : ''}">
-        ${c.status}
-      </span>`;
+function getDoctorName(id) {
+  if (!id || !doctors.length) return "—";
+  const d = doctors.find(doc => doc.id === id);
+  return d ? d.name : "Unknown Doctor";
+}
 
-    if (c.status === 'Rejected' && c.accounting_note) {
-      statusBadge += `
-        <span class="group relative ml-1 cursor-pointer">ⓘ
-          <span class="absolute hidden group-hover:block bg-black text-white text-xs p-2 rounded w-48 z-50">
-            ${c.accounting_note}
+/* ================= DOCTOR ROW ================= */
+function addDoctorRow() {
+  const row = document.createElement("div");
+  row.className = "flex gap-2";
+
+  row.innerHTML = `
+    <select class="doctor-select border p-2 rounded w-1/3">
+      ${doctors.map(d => `<option value="${d.id}">${d.name}</option>`).join("")}
+    </select>
+
+    <input class="doctor-role border p-2 rounded w-1/3" placeholder="Specialization / Role" />
+    <input class="doctor-fee border p-2 rounded w-1/4" type="number" placeholder="Fee" />
+
+    <button type="button" class="removeDoctor text-red-600">✕</button>
+  `;
+
+  row.querySelector(".doctor-fee").oninput = computeTotal;
+  row.querySelector(".removeDoctor").onclick = () => {
+    row.remove();
+    computeTotal();
+  };
+
+  doctorContainer.appendChild(row);
+}
+
+addDoctorBtn.onclick = addDoctorRow;
+
+/* ================= TOTAL ================= */
+function computeTotal() {
+  let total = 0;
+  document.querySelectorAll(".doctor-fee").forEach(i => {
+    total += Number(i.value || 0);
+  });
+  totalDoctorFee.value = total;
+}
+
+/* ================= SAVE ================= */
+caseForm.onsubmit = async e => {
+  e.preventDefault();
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) return alert("Not authenticated");
+
+  const breakdown = [];
+  document.querySelectorAll("#doctorContainer > div").forEach(row => {
+    breakdown.push({
+      doctor_id: row.querySelector(".doctor-select").value,
+      role: row.querySelector(".doctor-role").value,
+      fee: Number(row.querySelector(".doctor-fee").value || 0)
+    });
+  });
+
+  const total = breakdown.reduce((s, d) => s + d.fee, 0);
+
+  const { error } = await supabaseClient.from("cases").insert([{
+    case_no: case_no.value,
+    case_date: case_date.value,
+    patient_name: patient_name.value,
+    doctor_fee: total,
+    doctor_breakdown: breakdown,
+    created_by: user.id
+  }]);
+
+  if (error) return alert(error.message);
+
+  toast("Case saved");
+  caseForm.reset();
+  doctorContainer.innerHTML = "";
+  addDoctorRow();
+  loadCases();
+};
+
+/* ================= LOAD CASES ================= */
+async function loadCases() {
+  const { data, error } = await supabaseClient
+    .from("cases")
+    .select(`id, case_no, case_date, patient_name, doctor_fee, doctor_breakdown, status`)
+    .order("created_at", { ascending: false });
+
+  if (error) return console.error(error);
+
+  allCases = data;
+  renderCases(data);
+}
+
+function renderCases(data) {
+  casesTable.innerHTML = "";
+
+  data.forEach(c => {
+    let doctorsHtml = "-";
+
+    if (Array.isArray(c.doctor_breakdown)) {
+      doctorsHtml = c.doctor_breakdown.map(d => `
+        <div class="leading-tight">
+          <strong>${getDoctorName(d.doctor_id)}</strong><br>
+          <span class="text-xs text-gray-600">
+            ${d.role || "—"} · ₱${Number(d.fee).toLocaleString()}
           </span>
-        </span>`;
+        </div>
+      `).join("<hr class='my-1'>");
     }
 
-    tbody.innerHTML += `
-      <tr class="border-t">
+    casesTable.innerHTML += `
+      <tr class="border-t ${c.status === "voided" ? "line-through text-gray-400" : ""}">
         <td class="p-2">${c.case_no}</td>
         <td class="p-2">${c.case_date}</td>
         <td class="p-2">${c.patient_name}</td>
+        <td class="p-2">${doctorsHtml}</td>
+        <td class="p-2 font-semibold">₱${Number(c.doctor_fee).toLocaleString()}</td>
         <td class="p-2">
-          ${c.doctors?.name || '-'}<br>
-          <span class="text-xs text-gray-500">
-            ${c.doctors?.specialization || ''}
-          </span>
+          ${
+            c.status === "voided"
+              ? "-"
+              : `<button class="text-red-600" onclick="voidCase('${c.id}')">Void</button>`
+          }
         </td>
-        <td class="p-2">₱${Number(c.doctor_fee).toLocaleString()}</td>
-        <td class="p-2">${statusBadge}</td>
-        <td class="p-2">
-          <button class="text-red-600 text-xs">Void</button>
-        </td>
-      </tr>`;
+      </tr>
+    `;
   });
 }
 
+/* ================= VOID ================= */
+async function voidCase(id) {
+  if (!confirm("Void this case?")) return;
+
+  await supabaseClient
+    .from("cases")
+    .update({ status: "voided" })
+    .eq("id", id);
+
+  toast("Case voided");
+  loadCases();
+}
+
+/* ================= SEARCH ================= */
+searchInput.oninput = e => {
+  const q = e.target.value.toLowerCase();
+
+  renderCases(allCases.filter(c =>
+    c.case_no.toLowerCase().includes(q) ||
+    c.patient_name.toLowerCase().includes(q) ||
+    JSON.stringify(c.doctor_breakdown).toLowerCase().includes(q)
+  ));
+};
+
+/* ================= INIT ================= */
+(async () => {
+  await loadDoctors();
+  await loadCases();
+})();
 </script>
+
 </body>
 </html>
-
