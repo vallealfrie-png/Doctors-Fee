@@ -140,6 +140,10 @@ async function loadDoctors() {
   doctors = data;
   addDoctorRow();
 }
+  function getDoctorName(id) {
+  const d = doctors.find(doc => doc.id === id);
+  return d ? d.name : "Unknown Doctor";
+}
 
 /* ================= DOCTOR ROW ================= */
 function addDoctorRow() {
@@ -216,7 +220,7 @@ caseForm.onsubmit = async e => {
 async function loadCases() {
   const { data } = await supabaseClient
     .from("cases")
-    .select("id, case_no, case_date, patient_name, doctor_fee, status")
+    .select(`id, case_no, case_date, patient_name, doctor_fee, doctor_breakdown, status`)
     .order("created_at", { ascending: false });
 
   allCases = data;
@@ -225,22 +229,48 @@ async function loadCases() {
 
 function renderCases(data) {
   casesTable.innerHTML = "";
+
   data.forEach(c => {
+    let doctorHtml = "-";
+
+    if (Array.isArray(c.doctor_breakdown)) {
+      doctorHtml = c.doctor_breakdown
+        .map(d => `
+          <div class="leading-tight">
+            <strong>${getDoctorName(d.doctor_id)}</strong><br>
+            <span class="text-xs text-gray-600">
+              ${d.role || "—"} · ₱${Number(d.fee).toLocaleString()}
+            </span>
+          </div>
+        `)
+        .join("<hr class='my-1'>");
+    }
+
     casesTable.innerHTML += `
       <tr class="border-t ${c.status === "voided" ? "line-through text-gray-400" : ""}">
         <td class="p-2">${c.case_no}</td>
         <td class="p-2">${c.case_date}</td>
         <td class="p-2">${c.patient_name}</td>
-        <td class="p-2">₱${Number(c.doctor_fee).toFixed(2)}</td>
+
+        <!-- DOCTORS COLUMN -->
+        <td class="p-2">${doctorHtml}</td>
+
+        <td class="p-2 font-semibold">
+          ₱${Number(c.doctor_fee).toLocaleString()}
+        </td>
+
         <td class="p-2">
-          ${c.status === "voided" ? "-" :
-            `<button class="text-red-600" onclick="voidCase('${c.id}')">Void</button>`}
+          ${
+            c.status === "voided"
+              ? "-"
+              : `<button class="text-red-600" onclick="voidCase('${c.id}')">Void</button>`
+          }
         </td>
       </tr>
     `;
   });
 }
-
+  
 /* ================= INIT ================= */
 loadDoctors();
 loadCases();
@@ -248,3 +278,4 @@ loadCases();
 
 </body>
 </html>
+
