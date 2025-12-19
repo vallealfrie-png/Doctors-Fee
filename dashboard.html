@@ -2,101 +2,247 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Staff Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Dashboard | Corporate Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    .toast { animation: fadeInOut 2.5s ease-in-out; }
+    :root {
+      --corp-green: #007941;
+      --corp-light: #009954;
+      --corp-dark: #004d2a;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at center, var(--corp-light) 0%, var(--corp-green) 40%, var(--corp-dark) 100%);
+      background-attachment: fixed;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .toast { animation: fadeInOut 3s ease-in-out forwards; }
     @keyframes fadeInOut {
-      0% { opacity: 0; transform: translateY(-6px); }
+      0% { opacity: 0; transform: translateY(20px); }
       15% { opacity: 1; transform: translateY(0); }
-      85% { opacity: 1; }
-      100% { opacity: 0; }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    /* Attribution Styling from Index */
+    .attribution-info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 10px;
+      z-index: 40;
+      pointer-events: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .social-footnote {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 8px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      overflow: hidden;
+      white-space: nowrap;
+      width: 40px; 
+      height: 40px;
+      z-index: 100;
+      cursor: pointer;
+    }
+
+    .social-footnote:hover {
+      width: 160px;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .fb-icon {
+      background: #1877F2;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hidden-actions {
+      display: flex;
+      gap: 16px;
+      opacity: 0;
+      transform: translateX(10px);
+      transition: all 0.3s ease;
+      margin-left: 12px;
+    }
+
+    .social-footnote:hover .hidden-actions {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    @media (max-width: 640px) {
+      .attribution-info {
+        left: 0; right: 0; text-align: center; bottom: 10px;
+      }
+      .social-footnote { bottom: 35px; }
+      .main-content { padding-bottom: 80px; }
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="p-0 md:p-4">
 
-<!-- HEADER -->
-<header class="bg-white shadow p-4 flex justify-between items-center">
-  <div class="flex items-center gap-4">
-    <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-10 w-auto" />
-    <h1 class="text-xl font-semibold">Staff Dashboard</h1>
+<!-- NAVIGATION -->
+<nav class="sticky top-0 z-40 w-full mb-6">
+  <div class="glass-panel mx-auto max-w-7xl md:rounded-3xl p-4 flex justify-between items-center px-6 border-x-0 md:border-x">
+    <div class="flex items-center gap-3">
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8 md:h-10 w-auto" />
+      <div class="h-6 w-[1px] bg-gray-200 hidden md:block"></div>
+      <h1 class="text-lg font-bold text-gray-800 tracking-tight">Dashboard</h1>
+    </div>
+    
+    <div class="flex items-center gap-4">
+        <span id="userEmail" class="hidden md:inline text-xs font-semibold text-gray-500 uppercase tracking-widest"></span>
+        <button id="logoutBtn" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-100 transition-colors">
+          Logout
+        </button>
+    </div>
   </div>
-  <button id="logoutBtn" class="text-red-600 hover:underline">Logout</button>
-</header>
+</nav>
 
-<!-- SUCCESS TOAST -->
-<div id="toast" class="hidden fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow toast z-50">
-  ✔ Case saved
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 bg-gray-900 text-white px-6 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 toast border border-white/10">
+  <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+  <span class="text-xs font-bold uppercase tracking-widest" id="toastMsg">Case Saved</span>
 </div>
 
-<!-- MAIN -->
-<main class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 px-4 md:px-6 main-content">
 
-<!-- ADD CASE (HIDDEN) -->
-<section id="addCaseSection" class="bg-white rounded shadow p-4 hidden">
-  <h2 class="font-semibold mb-4">New Case</h2>
+  <!-- FORM SECTION (AUTO-HIDE) -->
+  <aside id="addCaseSection" class="lg:col-span-4 hidden animate-in fade-in duration-300">
+    <div class="glass-panel rounded-[2rem] p-6 md:p-8 sticky top-28">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-extrabold text-gray-900">New Case</h2>
+        <button onclick="toggleForm()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
 
-  <form id="caseForm" class="space-y-3">
-    <input id="caseNo" class="w-full border p-2 rounded" placeholder="Case No" required />
-    <input id="caseDate" type="date" class="w-full border p-2 rounded" required />
-    <input id="patientName" class="w-full border p-2 rounded" placeholder="Patient Name" required />
+      <form id="caseForm" class="space-y-5">
+        <div class="space-y-1">
+            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference No.</label>
+            <input id="caseNo" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm focus:bg-white outline-none focus:border-green-500 transition-all" placeholder="Enter Case ID" required />
+        </div>
+        
+        <div class="space-y-1">
+            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date of Record</label>
+            <input id="caseDate" type="date" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm outline-none focus:border-green-500 transition-all" required />
+        </div>
 
-    <div>
-      <h3 class="font-semibold mb-1">Doctors</h3>
-      <div id="doctorContainer" class="space-y-2"></div>
-      <button type="button" id="addDoctorBtn" class="text-blue-600 text-sm mt-1">
-        + Add Doctor
-      </button>
+        <div class="space-y-1">
+            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient Name</label>
+            <input id="patientName" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm outline-none focus:border-green-500 transition-all" placeholder="Full legal name" required />
+        </div>
+
+        <div class="pt-2">
+          <h3 class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Assigned Doctors</h3>
+          <div id="doctorContainer" class="space-y-3 mb-3"></div>
+          <button type="button" id="addDoctorBtn" class="flex items-center gap-2 text-[#007941] text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">
+            <span class="bg-green-100 rounded-full w-5 h-5 flex items-center justify-center">+</span> 
+            Add Consultant
+          </button>
+        </div>
+
+        <button class="w-full bg-[#007941] text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-green-900/20 hover:bg-[#005e32] active:scale-[0.98] transition-all mt-4">
+          Finalize & Save
+        </button>
+      </form>
     </div>
+  </aside>
 
-    <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-      Save Case
-    </button>
-  </form>
-</section>
+  <!-- LIST SECTION -->
+  <section id="tableSection" class="lg:col-span-12 transition-all duration-500">
+    <div class="glass-panel rounded-[2rem] p-6 md:p-8 overflow-hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Active Records</h2>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Real-time medical database</p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="loadCases()" class="p-2 text-gray-400 hover:text-green-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
+      </div>
 
-<!-- CASE LIST -->
-<section class="lg:col-span-2 bg-white rounded shadow p-4">
-  <h2 class="font-semibold mb-4">Cases</h2>
-
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm border">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="p-2 border">Case</th>
-          <th class="p-2 border">Date</th>
-          <th class="p-2 border">Patient</th>
-          <th class="p-2 border">Doctors</th>
-          <th class="p-2 border">Total Fee</th>
-          <th class="p-2 border">Status</th>
-        </tr>
-      </thead>
-      <tbody id="casesTable"></tbody>
-    </table>
-  </div>
-</section>
-
+      <div class="overflow-x-auto -mx-6 md:mx-0">
+        <table class="w-full text-left min-w-[700px]">
+          <thead>
+            <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100">
+              <th class="pb-4 px-6">Reference</th>
+              <th class="pb-4 px-6">Patient / Date</th>
+              <th class="pb-4 px-6">Medical Team</th>
+              <th class="pb-4 px-6">Financials</th>
+              <th class="pb-4 px-6">Status</th>
+            </tr>
+          </thead>
+          <tbody id="casesTable" class="divide-y divide-gray-50">
+              <!-- Content generated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </main>
 
-<!-- FLOATING ADD CASE BUTTON -->
+<!-- FLOATING ACTION BUTTON -->
 <button
   id="addCaseFab"
-  class="fixed bottom-6 right-6 bg-blue-600 text-white
-         h-14 w-14 rounded-full shadow-lg
-         flex items-center justify-center
-         hover:w-40 transition-all duration-300
-         overflow-hidden group z-50">
-
-  <span class="text-2xl">+</span>
-  <span class="ml-3 hidden group-hover:inline whitespace-nowrap">
-    Add Case
-  </span>
+  class="fixed bottom-6 right-6 bg-[#007941] text-white h-14 w-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group border-4 border-white/20">
+  <svg class="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
 </button>
+
+<!-- FOOTER ELEMENTS -->
+<div class="attribution-info">
+  Created by: <strong>Projectvibe</strong>
+</div>
+
+<div class="social-footnote" title="Follow Projectvibe">
+  <div class="fb-icon">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+      <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/>
+    </svg>
+  </div>
+  <div class="hidden-actions">
+    <span class="action-link">Follow</span>
+    <span class="action-link">Like</span>
+  </div>
+</div>
 
 <script>
 const supabaseClient = supabase.createClient(
@@ -105,13 +251,17 @@ const supabaseClient = supabase.createClient(
 );
 
 let doctors = [];
+let currentUser = null;
 
 /* ================= AUTH ================= */
-let currentUser = null;
 (async () => {
   const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) location.href = "index.html";
+  if (!user) {
+    location.href = "index.html";
+    return;
+  }
   currentUser = user;
+  document.getElementById('userEmail').textContent = user.email;
   loadDoctors();
   loadCases();
 })();
@@ -124,16 +274,33 @@ logoutBtn.onclick = async () => {
 
 /* ================= TOAST ================= */
 function showToast(msg) {
-  toast.textContent = "✔ " + msg;
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
   toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 2500);
+  setTimeout(() => toast.classList.add("hidden"), 3000);
 }
 
-/* ================= ADD CASE TOGGLE ================= */
-addCaseFab.onclick = () => {
-  addCaseSection.classList.toggle("hidden");
-  addCaseSection.scrollIntoView({ behavior: "smooth" });
-};
+/* ================= FORM TOGGLE & AUTO-HIDE ================= */
+function toggleForm(show = null) {
+    const section = document.getElementById('addCaseSection');
+    const table = document.getElementById('tableSection');
+    const fab = document.getElementById('addCaseFab');
+    
+    const isNowHidden = show !== null ? !show : !section.classList.contains('hidden');
+
+    if (isNowHidden) {
+        section.classList.add('hidden');
+        table.classList.replace('lg:col-span-8', 'lg:col-span-12');
+        fab.classList.remove('hidden');
+    } else {
+        section.classList.remove('hidden');
+        table.classList.replace('lg:col-span-12', 'lg:col-span-8');
+        fab.classList.add('hidden');
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+addCaseFab.onclick = () => toggleForm(true);
 
 /* ================= DOCTORS ================= */
 async function loadDoctors() {
@@ -148,16 +315,19 @@ async function loadDoctors() {
 
 function addDoctorRow() {
   const row = document.createElement("div");
-  row.className = "flex gap-2";
+  row.className = "flex gap-2 animate-in slide-in-from-left duration-200";
 
   row.innerHTML = `
-    <select class="doctorSelect border p-2 rounded w-2/3">
+    <select class="doctorSelect bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-xs w-2/3 outline-none focus:bg-white focus:border-green-500 transition-all">
       <option value="">Select Doctor</option>
       ${doctors.map(d => `<option value="${d.id}">${d.name} (${d.specialization})</option>`).join("")}
     </select>
-    <input type="number"
-           class="doctorFee border p-2 rounded w-1/3"
-           placeholder="Fee" />
+    <div class="relative w-1/3">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₱</span>
+        <input type="number"
+               class="doctorFee bg-gray-50/50 border border-gray-100 p-3 pl-6 rounded-2xl text-xs w-full outline-none focus:bg-white focus:border-green-500 transition-all"
+               placeholder="Fee" />
+    </div>
   `;
 
   doctorContainer.appendChild(row);
@@ -181,7 +351,7 @@ caseForm.onsubmit = async e => {
     total += fee;
   });
 
-  if (!breakdown.length) return alert("Add at least one doctor");
+  if (!breakdown.length) return alert("Please assign at least one doctor.");
 
   const { error } = await supabaseClient.from("cases").insert({
     case_no: caseNo.value,
@@ -196,10 +366,17 @@ caseForm.onsubmit = async e => {
 
   if (error) return alert(error.message);
 
-  showToast("Case saved");
+  showToast("Case Registered Successfully");
+  
+  // RESET FORM
   caseForm.reset();
   doctorContainer.innerHTML = "";
   addDoctorRow();
+  
+  // AUTO HIDE FORM
+  toggleForm(false);
+  
+  // REFRESH DATA
   loadCases();
 };
 
@@ -216,40 +393,46 @@ async function loadCases() {
     const doctorsHtml = (c.doctor_breakdown || []).map(d => {
       const doc = doctors.find(x => x.id === d.doctor_id);
       return `
-        <div class="text-sm leading-tight">
-          <strong>${doc?.name || "Unknown"}</strong><br>
-          <span class="text-xs text-gray-500">
-            ${doc?.specialization || ""} ₱${Number(d.fee).toLocaleString()}
-          </span>
+        <div class="mb-2 last:mb-0">
+          <p class="text-[11px] font-bold text-gray-700 leading-tight">${doc?.name || "Unassigned"}</p>
+          <p class="text-[9px] text-gray-400 uppercase tracking-tighter">${doc?.specialization || ""} • ₱${Number(d.fee).toLocaleString()}</p>
         </div>
       `;
-    }).join("<hr class='my-1'>");
+    }).join("");
+
+    let statusStyle = "";
+    switch(c.acctg_status) {
+        case 'Verified': statusStyle = "bg-green-100 text-green-700"; break;
+        case 'Rejected': statusStyle = "bg-red-100 text-red-700"; break;
+        default: statusStyle = "bg-yellow-100 text-yellow-700";
+    }
 
     let statusBadge = `
-      <span class="px-2 py-1 rounded text-xs
-        ${c.acctg_status === "Pending" ? "bg-yellow-100 text-yellow-700" : ""}
-        ${c.acctg_status === "Verified" ? "bg-green-100 text-green-700" : ""}
-        ${c.acctg_status === "Rejected" ? "bg-red-100 text-red-700" : ""}">
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${statusStyle}">
         ${c.acctg_status}
       </span>`;
 
     if (c.acctg_status === "Rejected" && c.accounting_note) {
       statusBadge += `
-        <span class="group relative ml-1 cursor-pointer">ⓘ
-          <span class="absolute hidden group-hover:block bg-black text-white text-xs p-2 rounded w-48 z-50">
+        <div class="group relative inline-block ml-1">
+          <svg class="w-4 h-4 text-red-300 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+          <div class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] p-3 rounded-xl w-48 mb-2 shadow-xl z-50">
             ${c.accounting_note}
-          </span>
-        </span>`;
+            <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+          </div>
+        </div>`;
     }
 
     casesTable.innerHTML += `
-      <tr class="border-t">
-        <td class="p-2">${c.case_no}</td>
-        <td class="p-2">${c.case_date}</td>
-        <td class="p-2">${c.patient_name}</td>
-        <td class="p-2">${doctorsHtml}</td>
-        <td class="p-2 font-semibold">₱${Number(c.doctor_fee).toLocaleString()}</td>
-        <td class="p-2">${statusBadge}</td>
+      <tr class="hover:bg-gray-50/50 transition-colors">
+        <td class="py-5 px-6 font-mono text-xs font-bold text-gray-400 tracking-tighter">#${c.case_no}</td>
+        <td class="py-5 px-6">
+            <p class="text-sm font-extrabold text-gray-800">${c.patient_name}</p>
+            <p class="text-[10px] text-gray-400 font-medium">${new Date(c.case_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+        </td>
+        <td class="py-5 px-6">${doctorsHtml}</td>
+        <td class="py-5 px-6 font-black text-[#007941] text-sm">₱${Number(c.doctor_fee).toLocaleString()}</td>
+        <td class="py-5 px-6">${statusBadge}</td>
       </tr>`;
   });
 }
