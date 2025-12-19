@@ -3,60 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login</title>
+  <title>Staff Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- Load Supabase (NO DEFER!) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
     body {
-      background-image: url('https://images.unsplash.com/photo-1588776814546-ef1e0b8f7d1b?auto=format&fit=crop&w=1470&q=80'); /* medical/corporate vibe */
-      background-size: cover;
-      background-position: center;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0f172a; /* Deep corporate navy */
+      font-family: ui-sans-serif, system-ui, sans-serif;
     }
 
-    /* Slight overlay to make the login card stand out */
-    .overlay {
-      background-color: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(5px);
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    
+    /* Glassmorphism effect for the card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 10;
     }
   </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md shadow-xl rounded-2xl p-8 overlay">
-    
-    <!-- Logo Centered -->
-    <div class="flex justify-center mb-6">
-      <img src="https://i.imgur.com/VbZKWAf.png" alt="Corporate Logo" class="h-20 w-auto" />
+  <!-- Animated Cellular Background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="login-container w-full max-w-md">
+    <div class="glass-card rounded-3xl p-10 border border-white/30">
+      
+      <!-- Corporate Logo -->
+      <div class="flex justify-center mb-8">
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Corporate Logo" class="h-28 w-auto object-contain">
+      </div>
+
+      <div class="text-center mb-10">
+        <h2 class="text-3xl font-bold text-gray-900">Staff Portal</h2>
+        <p class="text-gray-500 mt-2 text-sm uppercase tracking-wider font-semibold">Medical Access Point</p>
+      </div>
+
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label class="block mb-2 text-sm font-bold text-gray-700 uppercase tracking-wide">Email Address</label>
+          <input id="email" type="email" placeholder="name@corporate.com"
+            class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all duration-200"
+            required />
+        </div>
+
+        <div>
+          <label class="block mb-2 text-sm font-bold text-gray-700 uppercase tracking-wide">Password</label>
+          <input id="password" type="password" placeholder="••••••••"
+            class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all duration-200"
+            required />
+        </div>
+
+        <button type="submit"
+          class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 active:scale-[0.99] shadow-xl shadow-blue-500/20 transition-all duration-200">
+          Sign In
+        </button>
+      </form>
+
+      <p id="error" class="text-red-600 font-medium text-center mt-6 p-3 bg-red-50 border border-red-100 rounded-xl hidden"></p>
+      
+      <div class="mt-10 pt-6 border-t border-gray-100 text-center">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+          Corporate Security Verified
+        </span>
+      </div>
     </div>
-
-    <h2 class="text-2xl font-bold text-center mb-6">Staff Login</h2>
-
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label class="block mb-1 font-semibold">Email</label>
-        <input id="email" type="email" class="w-full px-4 py-2 border rounded-lg"
-          required />
-      </div>
-
-      <div>
-        <label class="block mb-1 font-semibold">Password</label>
-        <input id="password" type="password" class="w-full px-4 py-2 border rounded-lg"
-          required />
-      </div>
-
-      <button type="submit"
-        class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-        Login
-      </button>
-    </form>
-
-    <p id="error" class="text-red-600 text-center mt-4 hidden"></p>
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    // --- Background Animation Logic ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    class Particle {
+      constructor() {
+        this.init();
+      }
+
+      init() {
+        this.radius = Math.random() * 40 + 20; // "Cell" size
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+        // Soft medical blue/teal colors
+        const colors = ['rgba(147, 197, 253, 0.15)', 'rgba(165, 243, 252, 0.15)', 'rgba(191, 219, 254, 0.1)'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        
+        // Add a "nucleus" or inner highlight for the cell look
+        ctx.beginPath();
+        ctx.arc(this.x - this.radius * 0.2, this.y - this.radius * 0.2, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fill();
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off walls
+        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
+        if (this.y + this.radius > canvas.height || this.y - this.radius < 0) this.vy *= -1;
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.floor((canvas.width * canvas.height) / 15000); // Responsive density
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+      resize();
+      initParticles();
+    });
+
+    // Start background animation
+    resize();
+    initParticles();
+    animate();
+
+    // --- Original Logic ---
+    document.addEventListener("DOMContentLoaded", () => {
       const supabase = window.supabase.createClient(
         "https://qmjjfrpwjewcrnavdsks.supabase.co",
         "sb_publishable_vToTFZu23icWOnjMn9zSxQ_LiR0SINF"
@@ -86,11 +203,9 @@
         window.location.href = "dashboard.html";
       });
 
-      // auto redirect if logged in
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) window.location.href = "dashboard.html";
       });
-
     });
   </script>
 </body>
