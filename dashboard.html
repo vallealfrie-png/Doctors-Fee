@@ -40,31 +40,32 @@
       100% { opacity: 0; transform: translateY(-20px); }
     }
 
-    /* Attribution Styling from Index */
+    /* Fixed Attribution - Higher Contrast */
     .attribution-info {
       position: fixed;
       bottom: 20px;
       left: 20px;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 10px;
+      color: #ffffff; /* Pure white for readability */
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      font-size: 11px;
       z-index: 40;
       pointer-events: none;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      font-weight: 500;
+      font-weight: 700;
     }
 
     .social-footnote {
       position: fixed;
-      bottom: 20px;
+      bottom: 60px; /* Moved up to avoid overlapping FAB on small screens */
       right: 20px;
       display: flex;
       align-items: center;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(10px);
       padding: 8px;
       border-radius: 50px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.4);
       color: white;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       overflow: hidden;
@@ -77,7 +78,7 @@
 
     .social-footnote:hover {
       width: 160px;
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.3);
     }
 
     .fb-icon {
@@ -105,12 +106,24 @@
       transform: translateX(0);
     }
 
+    /* Fixed FAB styling */
+    #addCaseFab {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 3.5rem;
+    }
+    #addCaseFab:hover {
+        width: 10rem;
+        border-radius: 2rem;
+    }
+
     @media (max-width: 640px) {
       .attribution-info {
-        left: 0; right: 0; text-align: center; bottom: 10px;
+        left: 0; right: 0; text-align: center; bottom: 80px;
       }
-      .social-footnote { bottom: 35px; }
-      .main-content { padding-bottom: 80px; }
+      .social-footnote { bottom: auto; top: 100px; right: 10px; }
+      .main-content { padding-bottom: 120px; }
+      #addCaseFab { bottom: 20px; right: 50%; transform: translateX(50%); }
+      #addCaseFab:hover { transform: translateX(50%) scale(1.05); }
     }
   </style>
 </head>
@@ -122,12 +135,23 @@
     <div class="flex items-center gap-3">
       <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8 md:h-10 w-auto" />
       <div class="h-6 w-[1px] bg-gray-200 hidden md:block"></div>
-      <h1 class="text-lg font-bold text-gray-800 tracking-tight">Dashboard</h1>
+      <h1 class="text-lg font-bold text-gray-800 tracking-tight hidden sm:block">Portal</h1>
     </div>
     
-    <div class="flex items-center gap-4">
-        <span id="userEmail" class="hidden md:inline text-xs font-semibold text-gray-500 uppercase tracking-widest"></span>
-        <button id="logoutBtn" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-100 transition-colors">
+    <!-- SEARCH BAR RESTORED -->
+    <div class="flex-1 max-w-md mx-4">
+      <div class="relative group">
+        <input type="text" id="searchInput" 
+          placeholder="Search patient, case, or doctor..." 
+          class="w-full bg-gray-100/50 border border-transparent focus:border-green-500 focus:bg-white rounded-2xl py-2 px-10 text-sm outline-none transition-all duration-300">
+        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button id="logoutBtn" class="bg-red-50 text-red-600 px-3 md:px-4 py-2 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-wider hover:bg-red-100 transition-colors">
           Logout
         </button>
     </div>
@@ -144,42 +168,42 @@
 <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 px-4 md:px-6 main-content">
 
   <!-- FORM SECTION (AUTO-HIDE) -->
-  <aside id="addCaseSection" class="lg:col-span-4 hidden animate-in fade-in duration-300">
+  <aside id="addCaseSection" class="lg:col-span-4 hidden animate-in fade-in zoom-in duration-300">
     <div class="glass-panel rounded-[2rem] p-6 md:p-8 sticky top-28">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-extrabold text-gray-900">New Case</h2>
-        <button onclick="toggleForm()" class="text-gray-400 hover:text-gray-600">
+        <h2 class="text-xl font-extrabold text-gray-900">New Entry</h2>
+        <button onclick="toggleForm(false)" class="text-gray-400 hover:text-red-500 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <form id="caseForm" class="space-y-5">
+      <form id="caseForm" class="space-y-4">
         <div class="space-y-1">
-            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference No.</label>
-            <input id="caseNo" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm focus:bg-white outline-none focus:border-green-500 transition-all" placeholder="Enter Case ID" required />
+            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Case ID</label>
+            <input id="caseNo" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm focus:bg-white outline-none focus:border-green-500 transition-all" placeholder="Ref #" required />
         </div>
         
         <div class="space-y-1">
-            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date of Record</label>
+            <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Record Date</label>
             <input id="caseDate" type="date" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm outline-none focus:border-green-500 transition-all" required />
         </div>
 
         <div class="space-y-1">
             <label class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient Name</label>
-            <input id="patientName" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm outline-none focus:border-green-500 transition-all" placeholder="Full legal name" required />
+            <input id="patientName" class="w-full bg-gray-50/50 border border-gray-100 p-3 rounded-2xl text-sm outline-none focus:border-green-500 transition-all" placeholder="Patient Name" required />
         </div>
 
         <div class="pt-2">
-          <h3 class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Assigned Doctors</h3>
+          <h3 class="pl-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Consultants</h3>
           <div id="doctorContainer" class="space-y-3 mb-3"></div>
           <button type="button" id="addDoctorBtn" class="flex items-center gap-2 text-[#007941] text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-opacity">
             <span class="bg-green-100 rounded-full w-5 h-5 flex items-center justify-center">+</span> 
-            Add Consultant
+            Add Doctor
           </button>
         </div>
 
         <button class="w-full bg-[#007941] text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg shadow-green-900/20 hover:bg-[#005e32] active:scale-[0.98] transition-all mt-4">
-          Finalize & Save
+          Save Record
         </button>
       </form>
     </div>
@@ -190,13 +214,8 @@
     <div class="glass-panel rounded-[2rem] p-6 md:p-8 overflow-hidden">
       <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Active Records</h2>
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Real-time medical database</p>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="loadCases()" class="p-2 text-gray-400 hover:text-green-600 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            </button>
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Active Cases</h2>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Medical Staff Records</p>
         </div>
       </div>
 
@@ -204,32 +223,31 @@
         <table class="w-full text-left min-w-[700px]">
           <thead>
             <tr class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100">
-              <th class="pb-4 px-6">Reference</th>
-              <th class="pb-4 px-6">Patient / Date</th>
-              <th class="pb-4 px-6">Medical Team</th>
-              <th class="pb-4 px-6">Financials</th>
-              <th class="pb-4 px-6">Status</th>
+              <th class="pb-4 px-6">Case No.</th>
+              <th class="pb-4 px-6">Patient Details</th>
+              <th class="pb-4 px-6">Consulting Team</th>
+              <th class="pb-4 px-6">Professional Fee</th>
+              <th class="pb-4 px-6 text-right">Accounting</th>
             </tr>
           </thead>
-          <tbody id="casesTable" class="divide-y divide-gray-50">
-              <!-- Content generated by JS -->
-          </tbody>
+          <tbody id="casesTable" class="divide-y divide-gray-50"></tbody>
         </table>
       </div>
     </div>
   </section>
 </main>
 
-<!-- FLOATING ACTION BUTTON -->
+<!-- FLOATING ACTION BUTTON - UPDATED RELOCATION AND BEHAVIOR -->
 <button
   id="addCaseFab"
-  class="fixed bottom-6 right-6 bg-[#007941] text-white h-14 w-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group border-4 border-white/20">
-  <svg class="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+  class="fixed bottom-6 right-6 bg-[#007941] text-white h-14 rounded-full shadow-2xl flex items-center justify-center hover:shadow-green-500/20 transition-all z-50 group border-4 border-white/20 overflow-hidden whitespace-nowrap">
+  <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+  <span class="max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 font-bold uppercase tracking-widest text-[10px]">Add Case</span>
 </button>
 
 <!-- FOOTER ELEMENTS -->
 <div class="attribution-info">
-  Created by: <strong>Projectvibe</strong>
+  Created by: <span>Projectvibe</span>
 </div>
 
 <div class="social-footnote" title="Follow Projectvibe">
@@ -239,8 +257,8 @@
     </svg>
   </div>
   <div class="hidden-actions">
-    <span class="action-link">Follow</span>
-    <span class="action-link">Like</span>
+    <span class="action-link text-[10px] font-bold">Follow</span>
+    <span class="action-link text-[10px] font-bold">Like</span>
   </div>
 </div>
 
@@ -251,6 +269,7 @@ const supabaseClient = supabase.createClient(
 );
 
 let doctors = [];
+let allCases = [];
 let currentUser = null;
 
 /* ================= AUTH ================= */
@@ -261,7 +280,6 @@ let currentUser = null;
     return;
   }
   currentUser = user;
-  document.getElementById('userEmail').textContent = user.email;
   loadDoctors();
   loadCases();
 })();
@@ -280,7 +298,7 @@ function showToast(msg) {
   setTimeout(() => toast.classList.add("hidden"), 3000);
 }
 
-/* ================= FORM TOGGLE & AUTO-HIDE ================= */
+/* ================= FORM TOGGLE ================= */
 function toggleForm(show = null) {
     const section = document.getElementById('addCaseSection');
     const table = document.getElementById('tableSection');
@@ -301,6 +319,20 @@ function toggleForm(show = null) {
 }
 
 addCaseFab.onclick = () => toggleForm(true);
+
+/* ================= SEARCH LOGIC ================= */
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allCases.filter(c => 
+        c.patient_name.toLowerCase().includes(term) || 
+        c.case_no.toLowerCase().includes(term) ||
+        (c.doctor_breakdown || []).some(d => {
+            const doc = doctors.find(x => x.id === d.doctor_id);
+            return doc?.name.toLowerCase().includes(term);
+        })
+    );
+    renderCases(filtered);
+});
 
 /* ================= DOCTORS ================= */
 async function loadDoctors() {
@@ -366,36 +398,36 @@ caseForm.onsubmit = async e => {
 
   if (error) return alert(error.message);
 
-  showToast("Case Registered Successfully");
-  
-  // RESET FORM
+  showToast("Case Saved Successfully");
   caseForm.reset();
   doctorContainer.innerHTML = "";
   addDoctorRow();
-  
-  // AUTO HIDE FORM
   toggleForm(false);
-  
-  // REFRESH DATA
   loadCases();
 };
 
-/* ================= LOAD CASES ================= */
+/* ================= LOAD & RENDER ================= */
 async function loadCases() {
   const { data } = await supabaseClient
     .from("cases")
     .select("case_no,case_date,patient_name,doctor_fee,doctor_breakdown,acctg_status,accounting_note")
     .order("created_at", { ascending: false });
 
-  casesTable.innerHTML = "";
+  allCases = data || [];
+  renderCases(allCases);
+}
 
-  (data || []).forEach(c => {
+function renderCases(dataList) {
+  const table = document.getElementById('casesTable');
+  table.innerHTML = "";
+
+  dataList.forEach(c => {
     const doctorsHtml = (c.doctor_breakdown || []).map(d => {
       const doc = doctors.find(x => x.id === d.doctor_id);
       return `
-        <div class="mb-2 last:mb-0">
-          <p class="text-[11px] font-bold text-gray-700 leading-tight">${doc?.name || "Unassigned"}</p>
-          <p class="text-[9px] text-gray-400 uppercase tracking-tighter">${doc?.specialization || ""} • ₱${Number(d.fee).toLocaleString()}</p>
+        <div class="mb-1">
+          <p class="text-[11px] font-bold text-gray-800 leading-tight">${doc?.name || "Consultant"}</p>
+          <p class="text-[9px] text-gray-400">₱${Number(d.fee).toLocaleString()}</p>
         </div>
       `;
     }).join("");
@@ -408,31 +440,20 @@ async function loadCases() {
     }
 
     let statusBadge = `
-      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${statusStyle}">
+      <span class="inline-flex items-center px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${statusStyle}">
         ${c.acctg_status}
       </span>`;
 
-    if (c.acctg_status === "Rejected" && c.accounting_note) {
-      statusBadge += `
-        <div class="group relative inline-block ml-1">
-          <svg class="w-4 h-4 text-red-300 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-          <div class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] p-3 rounded-xl w-48 mb-2 shadow-xl z-50">
-            ${c.accounting_note}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
-          </div>
-        </div>`;
-    }
-
-    casesTable.innerHTML += `
+    table.innerHTML += `
       <tr class="hover:bg-gray-50/50 transition-colors">
-        <td class="py-5 px-6 font-mono text-xs font-bold text-gray-400 tracking-tighter">#${c.case_no}</td>
+        <td class="py-5 px-6 font-mono text-[11px] font-bold text-gray-400">#${c.case_no}</td>
         <td class="py-5 px-6">
-            <p class="text-sm font-extrabold text-gray-800">${c.patient_name}</p>
-            <p class="text-[10px] text-gray-400 font-medium">${new Date(c.case_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <p class="text-sm font-extrabold text-gray-900">${c.patient_name}</p>
+            <p class="text-[10px] text-gray-400">${c.case_date}</p>
         </td>
         <td class="py-5 px-6">${doctorsHtml}</td>
         <td class="py-5 px-6 font-black text-[#007941] text-sm">₱${Number(c.doctor_fee).toLocaleString()}</td>
-        <td class="py-5 px-6">${statusBadge}</td>
+        <td class="py-5 px-6 text-right">${statusBadge}</td>
       </tr>`;
   });
 }
