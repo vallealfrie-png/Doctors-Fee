@@ -14,7 +14,8 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background-color: #0f172a; /* Deep corporate navy */
+      /* Radial Gradient: Center is Corporate Green, fading to a dark deep green at the edges */
+      background: radial-gradient(circle at center, #009954 0%, #007941 40%, #004d2a 100%);
       font-family: ui-sans-serif, system-ui, sans-serif;
     }
 
@@ -36,19 +37,91 @@
     }
 
     input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      border-color: #007941;
+      box-shadow: 0 0 0 3px rgba(0, 121, 65, 0.1);
     }
 
     .login-container {
       position: relative;
       z-index: 10;
     }
+
+    .bg-logo-green {
+      background-color: #007941;
+    }
+    .hover\:bg-logo-green-dark:hover {
+      background-color: #005e32;
+    }
+
+    /* Expandable Social Footnote */
+    .social-footnote {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      padding: 8px 12px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 12px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      overflow: hidden;
+      white-space: nowrap;
+      max-width: 160px;
+      z-index: 100;
+    }
+
+    .social-footnote:hover {
+      max-width: 320px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .fb-icon {
+      background: #1877F2;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .hidden-actions {
+      display: flex;
+      gap: 12px;
+      opacity: 0;
+      transform: translateX(10px);
+      transition: all 0.3s ease;
+      margin-left: 0;
+      width: 0;
+    }
+
+    .social-footnote:hover .hidden-actions {
+      opacity: 1;
+      transform: translateX(0);
+      margin-left: 12px;
+      width: auto;
+    }
+
+    .action-link {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+
+    .action-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4">
-  <!-- Animated Cellular Background -->
   <canvas id="bg-canvas"></canvas>
 
   <div class="login-container w-full max-w-md">
@@ -80,7 +153,7 @@
         </div>
 
         <button type="submit"
-          class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 active:scale-[0.99] shadow-xl shadow-blue-500/20 transition-all duration-200">
+          class="w-full py-4 bg-logo-green text-white font-bold rounded-xl hover:bg-logo-green-dark active:scale-[0.99] shadow-xl shadow-green-900/20 transition-all duration-200">
           Sign In
         </button>
       </form>
@@ -95,84 +168,125 @@
     </div>
   </div>
 
+  <!-- Footnote -->
+  <div class="social-footnote" title="Follow Projectvibe">
+    <div class="fb-icon">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+        <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/>
+      </svg>
+    </div>
+    <span>Created by: <strong>Projectvibe</strong></span>
+    <div class="hidden-actions">
+      <span class="action-link">Follow</span>
+      <span class="action-link">Like</span>
+    </div>
+  </div>
+
   <script>
-    // --- Background Animation Logic ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
-    let particles = [];
+    let molecules = [];
 
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
 
-    class Particle {
+    class Molecule {
       constructor() {
         this.init();
       }
 
       init() {
-        this.radius = Math.random() * 40 + 20; // "Cell" size
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.8;
-        this.vy = (Math.random() - 0.5) * 0.8;
-        // Soft medical blue/teal colors
-        const colors = ['rgba(147, 197, 253, 0.15)', 'rgba(165, 243, 252, 0.15)', 'rgba(191, 219, 254, 0.1)'];
-        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.angle = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+        this.scale = Math.random() * 0.5 + 0.5;
+        
+        this.structure = [
+          { x: 0, y: 0, r: 8, color: 'rgba(255, 255, 255, 0.4)' },
+          { x: 30, y: 0, r: 6, color: 'rgba(255, 255, 255, 0.2)' },
+          { x: -20, y: 25, r: 6, color: 'rgba(255, 255, 255, 0.2)' },
+          { x: -20, y: -25, r: 6, color: 'rgba(255, 255, 255, 0.2)' }
+        ];
+        
+        this.bonds = [[0, 1], [0, 2], [0, 3]];
       }
 
       draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        
-        // Add a "nucleus" or inner highlight for the cell look
-        ctx.beginPath();
-        ctx.arc(this.x - this.radius * 0.2, this.y - this.radius * 0.2, this.radius * 0.3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.fill();
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.scale(this.scale, this.scale);
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 2;
+        this.bonds.forEach(bond => {
+          const start = this.structure[bond[0]];
+          const end = this.structure[bond[1]];
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+        });
+
+        this.structure.forEach(atom => {
+          ctx.beginPath();
+          ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2);
+          ctx.fillStyle = atom.color;
+          ctx.fill();
+          
+          ctx.beginPath();
+          ctx.arc(atom.x - atom.r*0.3, atom.y - atom.r*0.3, atom.r*0.2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.fill();
+        });
+
+        ctx.restore();
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
+        this.angle += this.rotationSpeed;
 
-        // Bounce off walls
-        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
-        if (this.y + this.radius > canvas.height || this.y - this.radius < 0) this.vy *= -1;
+        const pad = 50;
+        if (this.x > canvas.width + pad) this.x = -pad;
+        else if (this.x < -pad) this.x = canvas.width + pad;
+        if (this.y > canvas.height + pad) this.y = -pad;
+        else if (this.y < -pad) this.y = canvas.height + pad;
       }
     }
 
-    function initParticles() {
-      particles = [];
-      const count = Math.floor((canvas.width * canvas.height) / 15000); // Responsive density
+    function initMolecules() {
+      molecules = [];
+      const count = Math.floor((canvas.width * canvas.height) / 35000); 
       for (let i = 0; i < count; i++) {
-        particles.push(new Particle());
+        molecules.push(new Molecule());
       }
     }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.update();
-        p.draw();
+      molecules.forEach(m => {
+        m.update();
+        m.draw();
       });
       requestAnimationFrame(animate);
     }
 
     window.addEventListener('resize', () => {
       resize();
-      initParticles();
+      initMolecules();
     });
 
-    // Start background animation
     resize();
-    initParticles();
+    initMolecules();
     animate();
 
-    // --- Original Logic ---
     document.addEventListener("DOMContentLoaded", () => {
       const supabase = window.supabase.createClient(
         "https://qmjjfrpwjewcrnavdsks.supabase.co",
@@ -189,10 +303,7 @@
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
           errorBox.textContent = error.message;
